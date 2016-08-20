@@ -101,10 +101,7 @@ class JdkWithJettyBootPlatform extends Platform {
       return new JdkWithJettyBootPlatform(putMethod, getMethod, removeMethod, clientProviderClass,
           serverProviderClass);
     } catch (ClassNotFoundException e) {
-      throw new AssertionError();
     } catch (NoSuchMethodException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
     }
 
     return null;
