@@ -86,7 +86,7 @@ public final class WebPlatformUrlTestData {
   }
 
   public static List<WebPlatformUrlTestData> load(BufferedSource source) throws IOException {
-    List<WebPlatformUrlTestData> list = new ArrayList<>();
+    List<WebPlatformUrlTestData> list = new ArrayList<WebPlatformUrlTestData>();
     for (String line; (line = source.readUtf8Line()) != null; ) {
       if (line.isEmpty() || line.startsWith("#")) continue;
 

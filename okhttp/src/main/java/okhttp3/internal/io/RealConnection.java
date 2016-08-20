@@ -1,18 +1,16 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package okhttp3.internal.io;
 
@@ -81,7 +79,8 @@ public final class RealConnection extends FramedConnection.Listener implements C
   public BufferedSource source;
   public BufferedSink sink;
   public int allocationLimit;
-  public final List<Reference<StreamAllocation>> allocations = new ArrayList<>();
+  public final List<Reference<StreamAllocation>> allocations =
+      new ArrayList<Reference<StreamAllocation>>();
   public boolean noNewStreams;
   public long idleAtNanos = Long.MAX_VALUE;
 
@@ -91,15 +90,16 @@ public final class RealConnection extends FramedConnection.Listener implements C
 
   public void connect(int connectTimeout, int readTimeout, int writeTimeout,
       List<ConnectionSpec> connectionSpecs, boolean connectionRetryEnabled) throws RouteException {
-    if (protocol != null) throw new IllegalStateException("already connected");
+    if (protocol != null)
+      throw new IllegalStateException("already connected");
 
     RouteException routeException = null;
     ConnectionSpecSelector connectionSpecSelector = new ConnectionSpecSelector(connectionSpecs);
 
     if (route.address().sslSocketFactory() == null
         && !connectionSpecs.contains(ConnectionSpec.CLEARTEXT)) {
-      throw new RouteException(new UnknownServiceException(
-          "CLEARTEXT communication not supported: " + connectionSpecs));
+      throw new RouteException(
+          new UnknownServiceException("CLEARTEXT communication not supported: " + connectionSpecs));
     }
 
     while (protocol == null) {
@@ -151,7 +151,8 @@ public final class RealConnection extends FramedConnection.Listener implements C
       connectSocket(connectTimeout, readTimeout, writeTimeout, connectionSpecSelector);
       tunnelRequest = createTunnel(readTimeout, writeTimeout, tunnelRequest, url);
 
-      if (tunnelRequest == null) break; // Tunnel successfully created.
+      if (tunnelRequest == null)
+        break; // Tunnel successfully created.
 
       // The proxy decided to close the connection after an auth challenge. We need to create a new
       // connection, but this time with the auth credentials.
@@ -177,8 +178,7 @@ public final class RealConnection extends FramedConnection.Listener implements C
     Address address = route.address();
 
     rawSocket = proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.HTTP
-        ? address.socketFactory().createSocket()
-        : new Socket(proxy);
+        ? address.socketFactory().createSocket() : new Socket(proxy);
 
     rawSocket.setSoTimeout(readTimeout);
     try {
@@ -203,10 +203,8 @@ public final class RealConnection extends FramedConnection.Listener implements C
       socket.setSoTimeout(0); // Framed connection timeouts are set per-stream.
 
       FramedConnection framedConnection = new FramedConnection.Builder(true)
-          .socket(socket, route.address().url().host(), source, sink)
-          .protocol(protocol)
-          .listener(this)
-          .build();
+          .socket(socket, route.address().url().host(), source, sink).protocol(protocol)
+          .listener(this).build();
       framedConnection.start();
 
       // Only assign the framed connection once the preface has been sent successfully.
@@ -225,14 +223,13 @@ public final class RealConnection extends FramedConnection.Listener implements C
     SSLSocket sslSocket = null;
     try {
       // Create the wrapper over the connected socket.
-      sslSocket = (SSLSocket) sslSocketFactory.createSocket(
-          rawSocket, address.url().host(), address.url().port(), true /* autoClose */);
+      sslSocket = (SSLSocket) sslSocketFactory.createSocket(rawSocket, address.url().host(),
+          address.url().port(), true /* autoClose */);
 
       // Configure the socket's ciphers, TLS versions, and extensions.
       ConnectionSpec connectionSpec = connectionSpecSelector.configureSecureSocket(sslSocket);
       if (connectionSpec.supportsTlsExtensions()) {
-        Platform.get().configureTlsExtensions(
-            sslSocket, address.url().host(), address.protocols());
+        Platform.get().configureTlsExtensions(sslSocket, address.url().host(), address.protocols());
       }
 
       // Force handshake. This can throw!
@@ -242,10 +239,10 @@ public final class RealConnection extends FramedConnection.Listener implements C
       // Verify that the socket's certificates are acceptable for the target host.
       if (!address.hostnameVerifier().verify(address.url().host(), sslSocket.getSession())) {
         X509Certificate cert = (X509Certificate) unverifiedHandshake.peerCertificates().get(0);
-        throw new SSLPeerUnverifiedException("Hostname " + address.url().host() + " not verified:"
-            + "\n    certificate: " + CertificatePinner.pin(cert)
-            + "\n    DN: " + cert.getSubjectDN().getName()
-            + "\n    subjectAltNames: " + OkHostnameVerifier.allSubjectAltNames(cert));
+        throw new SSLPeerUnverifiedException(
+            "Hostname " + address.url().host() + " not verified:" + "\n    certificate: "
+                + CertificatePinner.pin(cert) + "\n    DN: " + cert.getSubjectDN().getName()
+                + "\n    subjectAltNames: " + OkHostnameVerifier.allSubjectAltNames(cert));
       }
 
       // Check that the certificate pinner is satisfied by the certificates presented.
@@ -254,18 +251,16 @@ public final class RealConnection extends FramedConnection.Listener implements C
 
       // Success! Save the handshake and the ALPN protocol.
       String maybeProtocol = connectionSpec.supportsTlsExtensions()
-          ? Platform.get().getSelectedProtocol(sslSocket)
-          : null;
+          ? Platform.get().getSelectedProtocol(sslSocket) : null;
       socket = sslSocket;
       source = Okio.buffer(Okio.source(socket));
       sink = Okio.buffer(Okio.sink(socket));
       handshake = unverifiedHandshake;
-      protocol = maybeProtocol != null
-          ? Protocol.get(maybeProtocol)
-          : Protocol.HTTP_1_1;
+      protocol = maybeProtocol != null ? Protocol.get(maybeProtocol) : Protocol.HTTP_1_1;
       success = true;
     } catch (AssertionError e) {
-      if (Util.isAndroidGetsocknameError(e)) throw new IOException(e);
+      if (Util.isAndroidGetsocknameError(e))
+        throw new IOException(e);
       throw e;
     } finally {
       if (sslSocket != null) {
@@ -315,7 +310,8 @@ public final class RealConnection extends FramedConnection.Listener implements C
 
         case HTTP_PROXY_AUTH:
           tunnelRequest = route.address().proxyAuthenticator().authenticate(route, response);
-          if (tunnelRequest == null) throw new IOException("Failed to authenticate with proxy");
+          if (tunnelRequest == null)
+            throw new IOException("Failed to authenticate with proxy");
 
           if ("close".equalsIgnoreCase(response.header("Connection"))) {
             return tunnelRequest;
@@ -323,8 +319,7 @@ public final class RealConnection extends FramedConnection.Listener implements C
           break;
 
         default:
-          throw new IOException(
-              "Unexpected response code for CONNECT: " + response.code());
+          throw new IOException("Unexpected response code for CONNECT: " + response.code());
       }
     }
   }
@@ -335,11 +330,9 @@ public final class RealConnection extends FramedConnection.Listener implements C
    * This avoids sending potentially sensitive data like HTTP cookies to the proxy unencrypted.
    */
   private Request createTunnelRequest() throws IOException {
-    return new Request.Builder()
-        .url(route.address().url())
+    return new Request.Builder().url(route.address().url())
         .header("Host", Util.hostHeader(route.address().url(), true))
-        .header("Proxy-Connection", "Keep-Alive")
-        .header("User-Agent", Version.userAgent()) // For HTTP/1.0 proxies like Squid.
+        .header("Proxy-Connection", "Keep-Alive").header("User-Agent", Version.userAgent())
         .build();
   }
 
@@ -348,7 +341,8 @@ public final class RealConnection extends FramedConnection.Listener implements C
     return protocol != null;
   }
 
-  @Override public Route route() {
+  @Override
+  public Route route() {
     return route;
   }
 
@@ -357,7 +351,8 @@ public final class RealConnection extends FramedConnection.Listener implements C
     closeQuietly(rawSocket);
   }
 
-  @Override public Socket socket() {
+  @Override
+  public Socket socket() {
     return socket;
   }
 
@@ -394,16 +389,19 @@ public final class RealConnection extends FramedConnection.Listener implements C
   }
 
   /** Refuse incoming streams. */
-  @Override public void onStream(FramedStream stream) throws IOException {
+  @Override
+  public void onStream(FramedStream stream) throws IOException {
     stream.close(ErrorCode.REFUSED_STREAM);
   }
 
   /** When settings are received, adjust the allocation limit. */
-  @Override public void onSettings(FramedConnection connection) {
+  @Override
+  public void onSettings(FramedConnection connection) {
     allocationLimit = connection.maxConcurrentStreams();
   }
 
-  @Override public Handshake handshake() {
+  @Override
+  public Handshake handshake() {
     return handshake;
   }
 
@@ -415,7 +413,8 @@ public final class RealConnection extends FramedConnection.Listener implements C
     return framedConnection != null;
   }
 
-  @Override public Protocol protocol() {
+  @Override
+  public Protocol protocol() {
     if (framedConnection == null) {
       return protocol != null ? protocol : Protocol.HTTP_1_1;
     } else {
@@ -423,17 +422,10 @@ public final class RealConnection extends FramedConnection.Listener implements C
     }
   }
 
-  @Override public String toString() {
-    return "Connection{"
-        + route.address().url().host() + ":" + route.address().url().port()
-        + ", proxy="
-        + route.proxy()
-        + " hostAddress="
-        + route.socketAddress()
-        + " cipherSuite="
-        + (handshake != null ? handshake.cipherSuite() : "none")
-        + " protocol="
-        + protocol
-        + '}';
+  @Override
+  public String toString() {
+    return "Connection{" + route.address().url().host() + ":" + route.address().url().port()
+        + ", proxy=" + route.proxy() + " hostAddress=" + route.socketAddress() + " cipherSuite="
+        + (handshake != null ? handshake.cipherSuite() : "none") + " protocol=" + protocol + '}';
   }
 }

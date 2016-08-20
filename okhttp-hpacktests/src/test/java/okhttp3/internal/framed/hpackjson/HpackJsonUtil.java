@@ -49,7 +49,7 @@ public final class HpackJsonUtil {
   /** Iterate through the hpack-test-case resources, only picking stories for the current draft. */
   public static String[] storiesForCurrentDraft() throws URISyntaxException {
     File testCaseDirectory = new File(HpackJsonUtil.class.getResource("/hpack-test-case").toURI());
-    List<String> storyNames = new ArrayList<>();
+    List<String> storyNames = new ArrayList<String>();
     for (File path : testCaseDirectory.listFiles()) {
       if (path.isDirectory() && Arrays.asList(path.list()).contains("story_00.json")) {
         try {
@@ -69,7 +69,7 @@ public final class HpackJsonUtil {
    * Reads stories named "story_xx.json" from the folder provided.
    */
   public static List<Story> readStories(String testFolderName) throws Exception {
-    List<Story> result = new ArrayList<>();
+    List<Story> result = new ArrayList<Story>();
     int i = 0;
     while (true) { // break after last test.
       String storyResourceName = String.format(STORY_RESOURCE_FORMAT, testFolderName, i);

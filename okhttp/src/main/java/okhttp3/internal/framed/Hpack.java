@@ -1,17 +1,15 @@
 /*
  * Copyright (C) 2013 Square, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package okhttp3.internal.framed;
 
@@ -33,8 +31,8 @@ import okio.Source;
  *
  * http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-12
  *
- * This implementation uses an array for the dynamic table and a list for indexed entries.  Dynamic
- * entries are added to the array, starting in the last position moving forward.  When the array
+ * This implementation uses an array for the dynamic table and a list for indexed entries. Dynamic
+ * entries are added to the array, starting in the last position moving forward. When the array
  * fills, it is doubled.
  */
 final class Hpack {
@@ -44,76 +42,39 @@ final class Hpack {
   private static final int PREFIX_7_BITS = 0x7f;
 
   private static final Header[] STATIC_HEADER_TABLE = new Header[] {
-      new Header(Header.TARGET_AUTHORITY, ""),
-      new Header(Header.TARGET_METHOD, "GET"),
-      new Header(Header.TARGET_METHOD, "POST"),
-      new Header(Header.TARGET_PATH, "/"),
-      new Header(Header.TARGET_PATH, "/index.html"),
-      new Header(Header.TARGET_SCHEME, "http"),
-      new Header(Header.TARGET_SCHEME, "https"),
-      new Header(Header.RESPONSE_STATUS, "200"),
-      new Header(Header.RESPONSE_STATUS, "204"),
-      new Header(Header.RESPONSE_STATUS, "206"),
-      new Header(Header.RESPONSE_STATUS, "304"),
-      new Header(Header.RESPONSE_STATUS, "400"),
-      new Header(Header.RESPONSE_STATUS, "404"),
-      new Header(Header.RESPONSE_STATUS, "500"),
-      new Header("accept-charset", ""),
-      new Header("accept-encoding", "gzip, deflate"),
-      new Header("accept-language", ""),
-      new Header("accept-ranges", ""),
-      new Header("accept", ""),
-      new Header("access-control-allow-origin", ""),
-      new Header("age", ""),
-      new Header("allow", ""),
-      new Header("authorization", ""),
-      new Header("cache-control", ""),
-      new Header("content-disposition", ""),
-      new Header("content-encoding", ""),
-      new Header("content-language", ""),
-      new Header("content-length", ""),
-      new Header("content-location", ""),
-      new Header("content-range", ""),
-      new Header("content-type", ""),
-      new Header("cookie", ""),
-      new Header("date", ""),
-      new Header("etag", ""),
-      new Header("expect", ""),
-      new Header("expires", ""),
-      new Header("from", ""),
-      new Header("host", ""),
-      new Header("if-match", ""),
-      new Header("if-modified-since", ""),
-      new Header("if-none-match", ""),
-      new Header("if-range", ""),
-      new Header("if-unmodified-since", ""),
-      new Header("last-modified", ""),
-      new Header("link", ""),
-      new Header("location", ""),
-      new Header("max-forwards", ""),
-      new Header("proxy-authenticate", ""),
-      new Header("proxy-authorization", ""),
-      new Header("range", ""),
-      new Header("referer", ""),
-      new Header("refresh", ""),
-      new Header("retry-after", ""),
-      new Header("server", ""),
-      new Header("set-cookie", ""),
-      new Header("strict-transport-security", ""),
-      new Header("transfer-encoding", ""),
-      new Header("user-agent", ""),
-      new Header("vary", ""),
-      new Header("via", ""),
-      new Header("www-authenticate", "")
-  };
+      new Header(Header.TARGET_AUTHORITY, ""), new Header(Header.TARGET_METHOD, "GET"),
+      new Header(Header.TARGET_METHOD, "POST"), new Header(Header.TARGET_PATH, "/"),
+      new Header(Header.TARGET_PATH, "/index.html"), new Header(Header.TARGET_SCHEME, "http"),
+      new Header(Header.TARGET_SCHEME, "https"), new Header(Header.RESPONSE_STATUS, "200"),
+      new Header(Header.RESPONSE_STATUS, "204"), new Header(Header.RESPONSE_STATUS, "206"),
+      new Header(Header.RESPONSE_STATUS, "304"), new Header(Header.RESPONSE_STATUS, "400"),
+      new Header(Header.RESPONSE_STATUS, "404"), new Header(Header.RESPONSE_STATUS, "500"),
+      new Header("accept-charset", ""), new Header("accept-encoding", "gzip, deflate"),
+      new Header("accept-language", ""), new Header("accept-ranges", ""), new Header("accept", ""),
+      new Header("access-control-allow-origin", ""), new Header("age", ""), new Header("allow", ""),
+      new Header("authorization", ""), new Header("cache-control", ""),
+      new Header("content-disposition", ""), new Header("content-encoding", ""),
+      new Header("content-language", ""), new Header("content-length", ""),
+      new Header("content-location", ""), new Header("content-range", ""),
+      new Header("content-type", ""), new Header("cookie", ""), new Header("date", ""),
+      new Header("etag", ""), new Header("expect", ""), new Header("expires", ""),
+      new Header("from", ""), new Header("host", ""), new Header("if-match", ""),
+      new Header("if-modified-since", ""), new Header("if-none-match", ""),
+      new Header("if-range", ""), new Header("if-unmodified-since", ""),
+      new Header("last-modified", ""), new Header("link", ""), new Header("location", ""),
+      new Header("max-forwards", ""), new Header("proxy-authenticate", ""),
+      new Header("proxy-authorization", ""), new Header("range", ""), new Header("referer", ""),
+      new Header("refresh", ""), new Header("retry-after", ""), new Header("server", ""),
+      new Header("set-cookie", ""), new Header("strict-transport-security", ""),
+      new Header("transfer-encoding", ""), new Header("user-agent", ""), new Header("vary", ""),
+      new Header("via", ""), new Header("www-authenticate", "")};
 
-  private Hpack() {
-  }
+  private Hpack() { }
 
   // http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-12#section-3.1
   static final class Reader {
 
-    private final List<Header> headerList = new ArrayList<>();
+    private final List<Header> headerList = new ArrayList<Header>();
     private final BufferedSource source;
 
     private int headerTableSizeSetting;
@@ -140,7 +101,8 @@ final class Hpack {
      * establishes the maximum dynamic table size, the {@link #maxDynamicTableByteCount} set during
      * processing may limit the table size to a smaller amount.
      *
-     * <p>Evicts entries or clears the table as needed.
+     * <p>
+     * Evicts entries or clears the table as needed.
      */
     void headerTableSizeSetting(int headerTableSizeSetting) {
       this.headerTableSizeSetting = headerTableSizeSetting;
@@ -198,13 +160,12 @@ final class Hpack {
           readIndexedHeader(index - 1);
         } else if (b == 0x40) { // 01000000
           readLiteralHeaderWithIncrementalIndexingNewName();
-        } else if ((b & 0x40) == 0x40) {  // 01NNNNNN
+        } else if ((b & 0x40) == 0x40) { // 01NNNNNN
           int index = readInt(b, PREFIX_6_BITS);
           readLiteralHeaderWithIncrementalIndexingIndexedName(index - 1);
-        } else if ((b & 0x20) == 0x20) {  // 001NNNNN
+        } else if ((b & 0x20) == 0x20) { // 001NNNNN
           maxDynamicTableByteCount = readInt(b, PREFIX_5_BITS);
-          if (maxDynamicTableByteCount < 0
-              || maxDynamicTableByteCount > headerTableSizeSetting) {
+          if (maxDynamicTableByteCount < 0 || maxDynamicTableByteCount > headerTableSizeSetting) {
             throw new IOException("Invalid dynamic table size update " + maxDynamicTableByteCount);
           }
           adjustDynamicTableByteCount();
@@ -218,7 +179,7 @@ final class Hpack {
     }
 
     public List<Header> getAndResetHeaderList() {
-      List<Header> result = new ArrayList<>(headerList);
+      List<Header> result = new ArrayList<Header>(headerList);
       headerList.clear();
       return result;
     }
@@ -357,7 +318,8 @@ final class Hpack {
   private static final Map<ByteString, Integer> NAME_TO_FIRST_INDEX = nameToFirstIndex();
 
   private static Map<ByteString, Integer> nameToFirstIndex() {
-    Map<ByteString, Integer> result = new LinkedHashMap<>(STATIC_HEADER_TABLE.length);
+    Map<ByteString, Integer> result =
+        new LinkedHashMap<ByteString, Integer>(STATIC_HEADER_TABLE.length);
     for (int i = 0; i < STATIC_HEADER_TABLE.length; i++) {
       if (!result.containsKey(STATIC_HEADER_TABLE[i].name)) {
         result.put(STATIC_HEADER_TABLE[i].name, i);
@@ -420,8 +382,7 @@ final class Hpack {
   }
 
   /**
-   * An HTTP/2 response cannot contain uppercase header characters and must be treated as
-   * malformed.
+   * An HTTP/2 response cannot contain uppercase header characters and must be treated as malformed.
    */
   private static ByteString checkLowercase(ByteString name) throws IOException {
     for (int i = 0, length = name.size(); i < length; i++) {

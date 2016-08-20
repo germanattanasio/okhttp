@@ -38,7 +38,7 @@ public final class JavaNetCookieJar implements CookieJar {
 
   @Override public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
     if (cookieHandler != null) {
-      List<String> cookieStrings = new ArrayList<>();
+      List<String> cookieStrings = new ArrayList<String>();
       for (Cookie cookie : cookies) {
         cookieStrings.add(cookie.toString());
       }
@@ -68,7 +68,7 @@ public final class JavaNetCookieJar implements CookieJar {
       if (("Cookie".equalsIgnoreCase(key) || "Cookie2".equalsIgnoreCase(key))
           && !entry.getValue().isEmpty()) {
         for (String header : entry.getValue()) {
-          if (cookies == null) cookies = new ArrayList<>();
+          if (cookies == null) cookies = new ArrayList<Cookie>();
           cookies.addAll(decodeHeaderAsJavaNetCookies(url, header));
         }
       }
@@ -84,7 +84,7 @@ public final class JavaNetCookieJar implements CookieJar {
    * multiple cookies in a single request header, which {@link Cookie#parse} doesn't support.
    */
   private List<Cookie> decodeHeaderAsJavaNetCookies(HttpUrl url, String header) {
-    List<Cookie> result = new ArrayList<>();
+    List<Cookie> result = new ArrayList<Cookie>();
     for (int pos = 0, limit = header.length(), pairEnd; pos < limit; pos = pairEnd + 1) {
       pairEnd = delimiterOffset(header, pos, limit, ";,");
       int equalsSign = delimiterOffset(header, pos, pairEnd, '=');

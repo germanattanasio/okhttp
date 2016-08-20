@@ -1,17 +1,15 @@
 /*
  * Copyright (C) 2012 The Android Open Source Project
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package okhttp3.internal;
 
@@ -37,6 +35,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
 import okhttp3.HttpUrl;
 import okio.Buffer;
 import okio.ByteString;
@@ -57,17 +56,17 @@ public final class Util {
    * Quick and dirty pattern to differentiate IP addresses from hostnames. This is an approximation
    * of Android's private InetAddress#isNumeric API.
    *
-   * <p>This matches IPv6 addresses as a hex string containing at least one colon, and possibly
+   * <p>
+   * This matches IPv6 addresses as a hex string containing at least one colon, and possibly
    * including dots after the first colon. It matches IPv4 addresses as strings containing only
    * decimal digits and dots. This pattern matches strings like "a:.23" and "54" that are neither IP
    * addresses nor hostnames; they will be verified as IP addresses (which is a more strict
    * verification).
    */
-  private static final Pattern VERIFY_AS_IP_ADDRESS = Pattern.compile(
-      "([0-9a-fA-F]*:[0-9a-fA-F:.]*)|([\\d.]+)");
+  private static final Pattern VERIFY_AS_IP_ADDRESS =
+      Pattern.compile("([0-9a-fA-F]*:[0-9a-fA-F:.]*)|([\\d.]+)");
 
-  private Util() {
-  }
+  private Util() { }
 
   public static void checkOffsetAndCount(long arrayLength, long offset, long count) {
     if ((offset | count) < 0 || offset > arrayLength || arrayLength - offset < count) {
@@ -96,15 +95,15 @@ public final class Util {
   }
 
   /**
-   * Closes {@code socket}, ignoring any checked exceptions. Does nothing if {@code socket} is
-   * null.
+   * Closes {@code socket}, ignoring any checked exceptions. Does nothing if {@code socket} is null.
    */
   public static void closeQuietly(Socket socket) {
     if (socket != null) {
       try {
         socket.close();
       } catch (AssertionError e) {
-        if (!isAndroidGetsocknameError(e)) throw e;
+        if (!isAndroidGetsocknameError(e))
+          throw e;
       } catch (RuntimeException rethrown) {
         throw rethrown;
       } catch (Exception ignored) {
@@ -141,12 +140,17 @@ public final class Util {
     try {
       b.close();
     } catch (Throwable e) {
-      if (thrown == null) thrown = e;
+      if (thrown == null)
+        thrown = e;
     }
-    if (thrown == null) return;
-    if (thrown instanceof IOException) throw (IOException) thrown;
-    if (thrown instanceof RuntimeException) throw (RuntimeException) thrown;
-    if (thrown instanceof Error) throw (Error) thrown;
+    if (thrown == null)
+      return;
+    if (thrown instanceof IOException)
+      throw (IOException) thrown;
+    if (thrown instanceof RuntimeException)
+      throw (RuntimeException) thrown;
+    if (thrown instanceof Error)
+      throw (Error) thrown;
     throw new AssertionError(thrown);
   }
 
@@ -169,9 +173,8 @@ public final class Util {
    */
   public static boolean skipAll(Source source, int duration, TimeUnit timeUnit) throws IOException {
     long now = System.nanoTime();
-    long originalDuration = source.timeout().hasDeadline()
-        ? source.timeout().deadlineNanoTime() - now
-        : Long.MAX_VALUE;
+    long originalDuration =
+        source.timeout().hasDeadline() ? source.timeout().deadlineNanoTime() - now : Long.MAX_VALUE;
     source.timeout().deadlineNanoTime(now + Math.min(originalDuration, timeUnit.toNanos(duration)));
     try {
       Buffer skipBuffer = new Buffer();
@@ -196,7 +199,9 @@ public final class Util {
       MessageDigest messageDigest = MessageDigest.getInstance("MD5");
       byte[] md5bytes = messageDigest.digest(s.getBytes("UTF-8"));
       return ByteString.of(md5bytes).hex();
-    } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+    } catch (NoSuchAlgorithmException e) {
+      throw new AssertionError(e);
+    } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
   }
@@ -207,7 +212,9 @@ public final class Util {
       MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
       byte[] sha1Bytes = messageDigest.digest(s.getBytes("UTF-8"));
       return ByteString.of(sha1Bytes).base64();
-    } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+    } catch (NoSuchAlgorithmException e) {
+      throw new AssertionError(e);
+    } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
   }
@@ -236,7 +243,7 @@ public final class Util {
 
   /** Returns an immutable copy of {@code list}. */
   public static <T> List<T> immutableList(List<T> list) {
-    return Collections.unmodifiableList(new ArrayList<>(list));
+    return Collections.unmodifiableList(new ArrayList<T>(list));
   }
 
   /** Returns an immutable list containing {@code elements}. */
@@ -246,12 +253,13 @@ public final class Util {
 
   /** Returns an immutable copy of {@code map}. */
   public static <K, V> Map<K, V> immutableMap(Map<K, V> map) {
-    return Collections.unmodifiableMap(new LinkedHashMap<>(map));
+    return Collections.unmodifiableMap(new LinkedHashMap<K, V>(map));
   }
 
   public static ThreadFactory threadFactory(final String name, final boolean daemon) {
     return new ThreadFactory() {
-      @Override public Thread newThread(Runnable runnable) {
+      @Override
+      public Thread newThread(Runnable runnable) {
         Thread result = new Thread(runnable, name);
         result.setDaemon(daemon);
         return result;
@@ -260,7 +268,7 @@ public final class Util {
   }
 
   /**
-   * Returns an array containing containing only elements found in {@code first}  and also in {@code
+   * Returns an array containing containing only elements found in {@code first} and also in {@code
    * second}. The returned elements are in the same order as in {@code first}.
    */
   @SuppressWarnings("unchecked")
@@ -270,11 +278,11 @@ public final class Util {
   }
 
   /**
-   * Returns a list containing containing only elements found in {@code first}  and also in {@code
+   * Returns a list containing containing only elements found in {@code first} and also in {@code
    * second}. The returned elements are in the same order as in {@code first}.
    */
   private static <T> List<T> intersect(T[] first, T[] second) {
-    List<T> result = new ArrayList<>();
+    List<T> result = new ArrayList<T>();
     for (T a : first) {
       for (T b : second) {
         if (a.equals(b)) {
@@ -287,19 +295,17 @@ public final class Util {
   }
 
   public static String hostHeader(HttpUrl url, boolean includeDefaultPort) {
-    String host = url.host().contains(":")
-        ? "[" + url.host() + "]"
-        : url.host();
+    String host = url.host().contains(":") ? "[" + url.host() + "]" : url.host();
     return includeDefaultPort || url.port() != HttpUrl.defaultPort(url.scheme())
-        ? host + ":" + url.port()
-        : host;
+        ? host + ":" + url.port() : host;
   }
 
   /** Returns {@code s} with control characters and non-ASCII characters replaced with '?'. */
   public static String toHumanReadableAscii(String s) {
     for (int i = 0, length = s.length(), c; i < length; i += Character.charCount(c)) {
       c = s.codePointAt(i);
-      if (c > '\u001f' && c < '\u007f') continue;
+      if (c > '\u001f' && c < '\u007f')
+        continue;
 
       Buffer buffer = new Buffer();
       buffer.writeUtf8(s, 0, i);
@@ -385,7 +391,8 @@ public final class Util {
    */
   public static int delimiterOffset(String input, int pos, int limit, String delimiters) {
     for (int i = pos; i < limit; i++) {
-      if (delimiters.indexOf(input.charAt(i)) != -1) return i;
+      if (delimiters.indexOf(input.charAt(i)) != -1)
+        return i;
     }
     return limit;
   }
@@ -396,7 +403,8 @@ public final class Util {
    */
   public static int delimiterOffset(String input, int pos, int limit, char delimiter) {
     for (int i = pos; i < limit; i++) {
-      if (input.charAt(i) == delimiter) return i;
+      if (input.charAt(i) == delimiter)
+        return i;
     }
     return limit;
   }
@@ -404,13 +412,14 @@ public final class Util {
   /**
    * Performs IDN ToASCII encoding and canonicalize the result to lowercase. e.g. This converts
    * {@code ☃.net} to {@code xn--n3h.net}, and {@code WwW.GoOgLe.cOm} to {@code www.google.com}.
-   * {@code null} will be returned if the input cannot be ToASCII encoded or if the result
-   * contains unsupported ASCII characters.
+   * {@code null} will be returned if the input cannot be ToASCII encoded or if the result contains
+   * unsupported ASCII characters.
    */
   public static String domainToAscii(String input) {
     try {
       String result = IDN.toASCII(input).toLowerCase(Locale.US);
-      if (result.isEmpty()) return null;
+      if (result.isEmpty())
+        return null;
 
       // Confirm that the IDN ToASCII result doesn't contain any illegal characters.
       if (containsInvalidHostnameAsciiCodes(result)) {

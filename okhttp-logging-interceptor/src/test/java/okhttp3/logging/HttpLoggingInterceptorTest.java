@@ -674,7 +674,7 @@ public final class HttpLoggingInterceptorTest {
   }
 
   private static class LogRecorder implements HttpLoggingInterceptor.Logger {
-    private final List<String> logs = new ArrayList<>();
+    private final List<String> logs = new ArrayList<String>();
     private int index;
 
     LogRecorder assertLogEqual(String expected) {

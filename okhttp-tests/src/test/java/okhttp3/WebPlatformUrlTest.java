@@ -36,7 +36,7 @@ public final class WebPlatformUrlTest {
   @Parameterized.Parameters(name = "{0}")
   public static List<Object[]> parameters() {
     try {
-      List<Object[]> result = new ArrayList<>();
+      List<Object[]> result = new ArrayList<Object[]>();
       for (WebPlatformUrlTestData urlTestData : loadTests()) {
         result.add(new Object[] {urlTestData});
       }

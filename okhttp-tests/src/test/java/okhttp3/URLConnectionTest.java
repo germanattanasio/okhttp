@@ -142,8 +142,8 @@ public final class URLConnectionTest {
     assertEquals("f", connection.getRequestProperty("D"));
     assertEquals("f", connection.getRequestProperty("d"));
     Map<String, List<String>> requestHeaders = connection.getRequestProperties();
-    assertEquals(newSet("e", "f"), new LinkedHashSet<>(requestHeaders.get("D")));
-    assertEquals(newSet("e", "f"), new LinkedHashSet<>(requestHeaders.get("d")));
+    assertEquals(newSet("e", "f"), new LinkedHashSet<String>(requestHeaders.get("D")));
+    assertEquals(newSet("e", "f"), new LinkedHashSet<String>(requestHeaders.get("d")));
     try {
       requestHeaders.put("G", Arrays.asList("h"));
       fail("Modified an unmodifiable view.");
@@ -214,8 +214,8 @@ public final class URLConnectionTest {
     assertEquals("HTTP/1.0 200 Fantastic", connection.getHeaderField(null));
     Map<String, List<String>> responseHeaders = connection.getHeaderFields();
     assertEquals(Arrays.asList("HTTP/1.0 200 Fantastic"), responseHeaders.get(null));
-    assertEquals(newSet("c", "e"), new LinkedHashSet<>(responseHeaders.get("A")));
-    assertEquals(newSet("c", "e"), new LinkedHashSet<>(responseHeaders.get("a")));
+    assertEquals(newSet("c", "e"), new LinkedHashSet<String>(responseHeaders.get("A")));
+    assertEquals(newSet("c", "e"), new LinkedHashSet<String>(responseHeaders.get("a")));
     try {
       responseHeaders.put("N", Arrays.asList("o"));
       fail("Modified an unmodifiable view.");
@@ -3503,7 +3503,7 @@ public final class URLConnectionTest {
   }
 
   private Set<String> newSet(String... elements) {
-    return new LinkedHashSet<>(Arrays.asList(elements));
+    return new LinkedHashSet<String>(Arrays.asList(elements));
   }
 
   enum TransferKind {

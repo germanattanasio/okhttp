@@ -302,7 +302,7 @@ public final class RouteSelectorTest {
     dns.addresses(makeFakeAddresses(255, numberOfAddresses));
 
     // Extract the regular sequence of routes from selector.
-    List<Route> regularRoutes = new ArrayList<>();
+    List<Route> regularRoutes = new ArrayList<Route>();
     while (routeSelector.hasNext()) {
       regularRoutes.add(routeSelector.next());
     }
@@ -314,7 +314,7 @@ public final class RouteSelectorTest {
     // Reset selector
     routeSelector = new RouteSelector(address, routeDatabase);
 
-    List<Route> routesWithFailedRoute = new ArrayList<>();
+    List<Route> routesWithFailedRoute = new ArrayList<Route>();
     while (routeSelector.hasNext()) {
       routesWithFailedRoute.add(routeSelector.next());
     }
@@ -363,7 +363,7 @@ public final class RouteSelectorTest {
 
   private static List<InetAddress> makeFakeAddresses(int prefix, int count) {
     try {
-      List<InetAddress> result = new ArrayList<>();
+      List<InetAddress> result = new ArrayList<InetAddress>();
       for (int i = 0; i < count; i++) {
         result.add(InetAddress.getByAddress(
             new byte[] {(byte) prefix, (byte) 0, (byte) 0, (byte) i}));

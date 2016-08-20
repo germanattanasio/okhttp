@@ -1,17 +1,15 @@
 /*
  * Copyright (C) 2016 Square, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package okhttp3.internal;
 
@@ -20,7 +18,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
+
 import javax.net.ssl.SSLSocket;
+
 import okhttp3.Protocol;
 
 /**
@@ -42,28 +42,35 @@ class JdkWithJettyBootPlatform extends Platform {
     this.serverProviderClass = serverProviderClass;
   }
 
-  @Override public void configureTlsExtensions(
-      SSLSocket sslSocket, String hostname, List<Protocol> protocols) {
+  @Override
+  public void configureTlsExtensions(SSLSocket sslSocket, String hostname,
+      List<Protocol> protocols) {
     List<String> names = alpnProtocolNames(protocols);
 
     try {
       Object provider = Proxy.newProxyInstance(Platform.class.getClassLoader(),
           new Class[] {clientProviderClass, serverProviderClass}, new JettyNegoProvider(names));
       putMethod.invoke(null, sslSocket, provider);
-    } catch (InvocationTargetException | IllegalAccessException e) {
+    } catch (InvocationTargetException e) {
+      throw new AssertionError(e);
+    } catch (IllegalAccessException e) {
       throw new AssertionError(e);
     }
   }
 
-  @Override public void afterHandshake(SSLSocket sslSocket) {
+  @Override
+  public void afterHandshake(SSLSocket sslSocket) {
     try {
       removeMethod.invoke(null, sslSocket);
-    } catch (IllegalAccessException | InvocationTargetException ignored) {
+    } catch (IllegalAccessException e) {
+      throw new AssertionError();
+    } catch (InvocationTargetException ignored) {
       throw new AssertionError();
     }
   }
 
-  @Override public String getSelectedProtocol(SSLSocket socket) {
+  @Override
+  public String getSelectedProtocol(SSLSocket socket) {
     try {
       JettyNegoProvider provider =
           (JettyNegoProvider) Proxy.getInvocationHandler(getMethod.invoke(null, socket));
@@ -73,7 +80,9 @@ class JdkWithJettyBootPlatform extends Platform {
         return null;
       }
       return provider.unsupported ? null : provider.selected;
-    } catch (InvocationTargetException | IllegalAccessException e) {
+    } catch (IllegalAccessException e) {
+      throw new AssertionError();
+    } catch (InvocationTargetException ignored) {
       throw new AssertionError();
     }
   }
@@ -89,9 +98,13 @@ class JdkWithJettyBootPlatform extends Platform {
       Method putMethod = negoClass.getMethod("put", SSLSocket.class, providerClass);
       Method getMethod = negoClass.getMethod("get", SSLSocket.class);
       Method removeMethod = negoClass.getMethod("remove", SSLSocket.class);
-      return new JdkWithJettyBootPlatform(
-          putMethod, getMethod, removeMethod, clientProviderClass, serverProviderClass);
-    } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+      return new JdkWithJettyBootPlatform(putMethod, getMethod, removeMethod, clientProviderClass,
+          serverProviderClass);
+    } catch (ClassNotFoundException e) {
+      throw new AssertionError();
+    } catch (NoSuchMethodException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
 
     return null;
@@ -113,7 +126,8 @@ class JdkWithJettyBootPlatform extends Platform {
       this.protocols = protocols;
     }
 
-    @Override public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       String methodName = method.getName();
       Class<?> returnType = method.getReturnType();
       if (args == null) {

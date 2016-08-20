@@ -1944,7 +1944,7 @@ public final class CallTest {
     server.enqueue(new MockResponse().setBody("A"));
 
     final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<String> bodyRef = new AtomicReference<>();
+    final AtomicReference<String> bodyRef = new AtomicReference<String>();
     final AtomicBoolean failureRef = new AtomicBoolean();
 
     Request request = new Request.Builder().url(server.url("/a")).build();
@@ -2058,7 +2058,7 @@ public final class CallTest {
         .header("User-Agent", "SyncApiTest")
         .build();
 
-    final BlockingQueue<Response> responseRef = new SynchronousQueue<>();
+    final BlockingQueue<Response> responseRef = new SynchronousQueue<Response>();
     client.newCall(request).enqueue(new Callback() {
       @Override public void onFailure(Call call, IOException e) {
         throw new AssertionError();
@@ -2410,7 +2410,7 @@ public final class CallTest {
     enableProtocol(Protocol.HTTP_2);
 
     // Capture the protocol as it is observed by the interceptor.
-    final AtomicReference<Protocol> protocolRef = new AtomicReference<>();
+    final AtomicReference<Protocol> protocolRef = new AtomicReference<Protocol>();
     Interceptor interceptor = new Interceptor() {
       @Override public Response intercept(Chain chain) throws IOException {
         protocolRef.set(chain.connection().protocol());
@@ -2686,7 +2686,7 @@ public final class CallTest {
 
   private static class RecordingSSLSocketFactory extends DelegatingSSLSocketFactory {
 
-    private List<SSLSocket> socketsCreated = new ArrayList<>();
+    private List<SSLSocket> socketsCreated = new ArrayList<SSLSocket>();
 
     public RecordingSSLSocketFactory(SSLSocketFactory delegate) {
       super(delegate);

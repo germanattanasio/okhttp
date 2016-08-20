@@ -29,9 +29,9 @@ import okhttp3.internal.Util;
 import static org.junit.Assert.assertEquals;
 
 public final class RecordingProxySelector extends ProxySelector {
-  public final List<Proxy> proxies = new ArrayList<>();
-  public final List<URI> requestedUris = new ArrayList<>();
-  public final List<String> failures = new ArrayList<>();
+  public final List<Proxy> proxies = new ArrayList<Proxy>();
+  public final List<URI> requestedUris = new ArrayList<URI>();
+  public final List<String> failures = new ArrayList<String>();
 
   @Override public List<Proxy> select(URI uri) {
     requestedUris.add(uri);

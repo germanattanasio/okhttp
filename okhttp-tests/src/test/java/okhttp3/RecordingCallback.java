@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class RecordingCallback implements Callback {
   public static final long TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
-  private final List<RecordedResponse> responses = new ArrayList<>();
+  private final List<RecordedResponse> responses = new ArrayList<RecordedResponse>();
 
   @Override public synchronized void onFailure(Call call, IOException e) {
     responses.add(new RecordedResponse(call.request(), null, null, null, e));

@@ -1,18 +1,15 @@
 /*
- * Copyright (C) 2011 Google Inc.
- * Copyright (C) 2013 Square, Inc.
+ * Copyright (C) 2011 Google Inc. Copyright (C) 2013 Square, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package okhttp3.mockwebserver;
@@ -100,23 +97,27 @@ import static okhttp3.mockwebserver.SocketPolicy.UPGRADE_TO_SSL_AT_END;
  */
 public final class MockWebServer implements TestRule {
   private static final X509TrustManager UNTRUSTED_TRUST_MANAGER = new X509TrustManager() {
-    @Override public void checkClientTrusted(X509Certificate[] chain, String authType)
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException {
       throw new CertificateException();
     }
 
-    @Override public void checkServerTrusted(X509Certificate[] chain, String authType) {
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType) {
       throw new AssertionError();
     }
 
-    @Override public X509Certificate[] getAcceptedIssuers() {
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
       throw new AssertionError();
     }
   };
 
   private static final Logger logger = Logger.getLogger(MockWebServer.class.getName());
 
-  private final BlockingQueue<RecordedRequest> requestQueue = new LinkedBlockingQueue<>();
+  private final BlockingQueue<RecordedRequest> requestQueue =
+      new LinkedBlockingQueue<RecordedRequest>();
 
   private final Set<Socket> openClientSockets =
       Collections.newSetFromMap(new ConcurrentHashMap<Socket, Boolean>());
@@ -134,13 +135,14 @@ public final class MockWebServer implements TestRule {
   private int port = -1;
   private InetSocketAddress inetSocketAddress;
   private boolean protocolNegotiationEnabled = true;
-  private List<Protocol> protocols
-      = Util.immutableList(Protocol.HTTP_2, Protocol.SPDY_3, Protocol.HTTP_1_1);
+  private List<Protocol> protocols =
+      Util.immutableList(Protocol.HTTP_2, Protocol.SPDY_3, Protocol.HTTP_1_1);
 
   private boolean started;
 
   private synchronized void maybeStart() {
-    if (started) return;
+    if (started)
+      return;
     try {
       start();
     } catch (IOException e) {
@@ -148,9 +150,11 @@ public final class MockWebServer implements TestRule {
     }
   }
 
-  @Override public Statement apply(final Statement base, Description description) {
+  @Override
+  public Statement apply(final Statement base, Description description) {
     return new Statement() {
-      @Override public void evaluate() throws Throwable {
+      @Override
+      public void evaluate() throws Throwable {
         maybeStart();
         try {
           base.evaluate();
@@ -183,8 +187,7 @@ public final class MockWebServer implements TestRule {
 
   public void setServerSocketFactory(ServerSocketFactory serverSocketFactory) {
     if (executor != null) {
-      throw new IllegalStateException(
-          "setServerSocketFactory() must be called before start()");
+      throw new IllegalStateException("setServerSocketFactory() must be called before start()");
     }
     this.serverSocketFactory = serverSocketFactory;
   }
@@ -195,12 +198,8 @@ public final class MockWebServer implements TestRule {
    * @param path the request path, such as "/".
    */
   public HttpUrl url(String path) {
-    return new HttpUrl.Builder()
-        .scheme(sslSocketFactory != null ? "https" : "http")
-        .host(getHostName())
-        .port(getPort())
-        .build()
-        .resolve(path);
+    return new HttpUrl.Builder().scheme(sslSocketFactory != null ? "https" : "http")
+        .host(getHostName()).port(getPort()).build().resolve(path);
   }
 
   /**
@@ -223,7 +222,7 @@ public final class MockWebServer implements TestRule {
    * when {@link #setProtocolNegotiationEnabled negotiation is disabled}.
    *
    * @param protocols the protocols to use, in order of preference. The list must contain
-   * {@linkplain Protocol#HTTP_1_1}. It must not contain null.
+   *        {@linkplain Protocol#HTTP_1_1}. It must not contain null.
    */
   public void setProtocols(List<Protocol> protocols) {
     protocols = Util.immutableList(protocols);
@@ -283,8 +282,8 @@ public final class MockWebServer implements TestRule {
    * served by the first enqueued response; the second request by the second enqueued response; and
    * so on.
    *
-   * @throws ClassCastException if the default dispatcher has been replaced with {@link
-   * #setDispatcher(Dispatcher)}.
+   * @throws ClassCastException if the default dispatcher has been replaced with
+   *         {@link #setDispatcher(Dispatcher)}.
    */
   public void enqueue(MockResponse response) {
     ((QueueDispatcher) dispatcher).enqueueResponse(response.clone());
@@ -299,7 +298,7 @@ public final class MockWebServer implements TestRule {
    * Starts the server on the loopback interface for the given port.
    *
    * @param port the port to listen to, or 0 for any available port. Automated tests should always
-   * use port 0 to avoid flakiness when a specific port is unavailable.
+   *        use port 0 to avoid flakiness when a specific port is unavailable.
    */
   public void start(int port) throws IOException {
     start(InetAddress.getByName("localhost"), port);
@@ -310,7 +309,7 @@ public final class MockWebServer implements TestRule {
    *
    * @param inetAddress the address to create the server socket on
    * @param port the port to listen to, or 0 for any available port. Automated tests should always
-   * use port 0 to avoid flakiness when a specific port is unavailable.
+   *        use port 0 to avoid flakiness when a specific port is unavailable.
    */
   public void start(InetAddress inetAddress, int port) throws IOException {
     start(new InetSocketAddress(inetAddress, port));
@@ -322,7 +321,8 @@ public final class MockWebServer implements TestRule {
    * @param inetSocketAddress the socket address to bind the server on
    */
   private synchronized void start(InetSocketAddress inetSocketAddress) throws IOException {
-    if (started) throw new IllegalStateException("start() already called");
+    if (started)
+      throw new IllegalStateException("start() already called");
     started = true;
 
     executor = Executors.newCachedThreadPool(Util.threadFactory("MockWebServer", false));
@@ -334,7 +334,8 @@ public final class MockWebServer implements TestRule {
 
     port = serverSocket.getLocalPort();
     executor.execute(new NamedRunnable("MockWebServer %s", port) {
-      @Override protected void execute() {
+      @Override
+      protected void execute() {
         try {
           logger.info(MockWebServer.this + " starting to accept connections");
           acceptConnections();
@@ -344,11 +345,11 @@ public final class MockWebServer implements TestRule {
 
         // Release all sockets and all threads, even if any close fails.
         Util.closeQuietly(serverSocket);
-        for (Iterator<Socket> s = openClientSockets.iterator(); s.hasNext(); ) {
+        for (Iterator<Socket> s = openClientSockets.iterator(); s.hasNext();) {
           Util.closeQuietly(s.next());
           s.remove();
         }
-        for (Iterator<FramedConnection> s = openFramedConnections.iterator(); s.hasNext(); ) {
+        for (Iterator<FramedConnection> s = openFramedConnections.iterator(); s.hasNext();) {
           Util.closeQuietly(s.next());
           s.remove();
         }
@@ -379,8 +380,10 @@ public final class MockWebServer implements TestRule {
   }
 
   public synchronized void shutdown() throws IOException {
-    if (!started) return;
-    if (serverSocket == null) throw new IllegalStateException("shutdown() before start()");
+    if (!started)
+      return;
+    if (serverSocket == null)
+      throw new IllegalStateException("shutdown() before start()");
 
     // Cause acceptConnections() to break out.
     serverSocket.close();
@@ -399,7 +402,8 @@ public final class MockWebServer implements TestRule {
     executor.execute(new NamedRunnable("MockWebServer %s", raw.getRemoteSocketAddress()) {
       int sequenceNumber = 0;
 
-      @Override protected void execute() {
+      @Override
+      protected void execute() {
         try {
           processConnection();
         } catch (IOException e) {
@@ -447,11 +451,8 @@ public final class MockWebServer implements TestRule {
 
         if (protocol != Protocol.HTTP_1_1) {
           FramedSocketHandler framedSocketListener = new FramedSocketHandler(socket, protocol);
-          FramedConnection framedConnection = new FramedConnection.Builder(false)
-              .socket(socket)
-              .protocol(protocol)
-              .listener(framedSocketListener)
-              .build();
+          FramedConnection framedConnection = new FramedConnection.Builder(false).socket(socket)
+              .protocol(protocol).listener(framedSocketListener).build();
           framedConnection.start();
           openFramedConnections.add(framedConnection);
           openClientSockets.remove(socket);
@@ -465,9 +466,7 @@ public final class MockWebServer implements TestRule {
         }
 
         if (sequenceNumber == 0) {
-          logger.warning(MockWebServer.this
-              + " connection from "
-              + raw.getInetAddress()
+          logger.warning(MockWebServer.this + " connection from " + raw.getInetAddress()
               + " didn't make a request");
         }
 
@@ -478,8 +477,7 @@ public final class MockWebServer implements TestRule {
       }
 
       /**
-       * Respond to CONNECT requests until a SWITCH_TO_SSL_AT_END response is
-       * dispatched.
+       * Respond to CONNECT requests until a SWITCH_TO_SSL_AT_END response is dispatched.
        */
       private void createTunnel() throws IOException, InterruptedException {
         BufferedSource source = Okio.buffer(Okio.source(raw));
@@ -489,7 +487,8 @@ public final class MockWebServer implements TestRule {
           if (!processOneRequest(raw, source, sink)) {
             throw new IllegalStateException("Tunnel without any CONNECT!");
           }
-          if (socketPolicy == UPGRADE_TO_SSL_AT_END) return;
+          if (socketPolicy == UPGRADE_TO_SSL_AT_END)
+            return;
         }
       }
 
@@ -500,7 +499,8 @@ public final class MockWebServer implements TestRule {
       private boolean processOneRequest(Socket socket, BufferedSource source, BufferedSink sink)
           throws IOException, InterruptedException {
         RecordedRequest request = readRequest(socket, source, sink, sequenceNumber);
-        if (request == null) return false;
+        if (request == null)
+          return false;
 
         requestCount.incrementAndGet();
         requestQueue.add(request);
@@ -512,7 +512,8 @@ public final class MockWebServer implements TestRule {
         }
         if (response.getSocketPolicy() == NO_RESPONSE) {
           // This read should block until the socket is closed. (Because nobody is writing.)
-          if (source.exhausted()) return false;
+          if (source.exhausted())
+            return false;
           throw new ProtocolException("unexpected data");
         }
 
@@ -528,8 +529,8 @@ public final class MockWebServer implements TestRule {
         }
 
         if (logger.isLoggable(Level.INFO)) {
-          logger.info(MockWebServer.this + " received request: " + request
-              + " and responded: " + response);
+          logger.info(
+              MockWebServer.this + " received request: " + request + " and responded: " + response);
         }
 
         // See warnings associated with these socket policies in SocketPolicy.
@@ -552,8 +553,8 @@ public final class MockWebServer implements TestRule {
     SSLContext context = SSLContext.getInstance("TLS");
     context.init(null, new TrustManager[] {UNTRUSTED_TRUST_MANAGER}, new SecureRandom());
     SSLSocketFactory sslSocketFactory = context.getSocketFactory();
-    SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket(
-        raw, raw.getInetAddress().getHostAddress(), raw.getPort(), true);
+    SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket(raw,
+        raw.getInetAddress().getHostAddress(), raw.getPort(), true);
     try {
       socket.startHandshake(); // we're testing a handshake failure
       throw new AssertionError();
@@ -564,14 +565,16 @@ public final class MockWebServer implements TestRule {
 
   private void dispatchBookkeepingRequest(int sequenceNumber, Socket socket)
       throws InterruptedException {
-    RecordedRequest request = new RecordedRequest(
-        null, null, null, -1, null, sequenceNumber, socket);
+    RecordedRequest request =
+        new RecordedRequest(null, null, null, -1, null, sequenceNumber, socket);
     requestCount.incrementAndGet();
     requestQueue.add(request);
     dispatcher.dispatch(request);
   }
 
-  /** @param sequenceNumber the index of this request on this connection. */
+  /**
+   * @param sequenceNumber the index of this request on this connection.
+   */
   private RecordedRequest readRequest(Socket socket, BufferedSource source, BufferedSink sink,
       int sequenceNumber) throws IOException {
     String request;
@@ -614,7 +617,7 @@ public final class MockWebServer implements TestRule {
 
     boolean hasBody = false;
     TruncatingBuffer requestBody = new TruncatingBuffer(bodyLimit);
-    List<Integer> chunkSizes = new ArrayList<>();
+    List<Integer> chunkSizes = new ArrayList<Integer>();
     MockResponse policy = dispatcher.peek();
     if (contentLength != -1) {
       hasBody = contentLength > 0;
@@ -655,31 +658,25 @@ public final class MockWebServer implements TestRule {
 
     ThreadPoolExecutor replyExecutor =
         new ThreadPoolExecutor(1, 1, 1, SECONDS, new LinkedBlockingDeque<Runnable>(),
-            Util.threadFactory(Util.format("MockWebServer %s WebSocket", request.getPath()),
-                true));
+            Util.threadFactory(Util.format("MockWebServer %s WebSocket", request.getPath()), true));
     replyExecutor.allowCoreThreadTimeOut(true);
-    final RealWebSocket webSocket =
-        new RealWebSocket(false /* is server */, source, sink, new SecureRandom(), replyExecutor,
-            listener, request.getPath()) {
-          @Override protected void close() throws IOException {
-            connectionClose.countDown();
-          }
-        };
+    final RealWebSocket webSocket = new RealWebSocket(false /* is server */, source, sink,
+        new SecureRandom(), replyExecutor, listener, request.getPath()) {
+      @Override
+      protected void close() throws IOException {
+        connectionClose.countDown();
+      }
+    };
 
     // Adapt the request and response into our Request and Response domain model.
     String scheme = request.getTlsVersion() != null ? "https" : "http";
     String authority = request.getHeader("Host"); // Has host and port.
-    final Request fancyRequest = new Request.Builder()
-        .url(scheme + "://" + authority + "/")
-        .headers(request.getHeaders())
-        .build();
-    final Response fancyResponse = new Response.Builder()
-        .code(Integer.parseInt(response.getStatus().split(" ")[1]))
-        .message(response.getStatus().split(" ", 3)[2])
-        .headers(response.getHeaders())
-        .request(fancyRequest)
-        .protocol(Protocol.HTTP_1_1)
-        .build();
+    final Request fancyRequest = new Request.Builder().url(scheme + "://" + authority + "/")
+        .headers(request.getHeaders()).build();
+    final Response fancyResponse =
+        new Response.Builder().code(Integer.parseInt(response.getStatus().split(" ")[1]))
+            .message(response.getStatus().split(" ", 3)[2]).headers(response.getHeaders())
+            .request(fancyRequest).protocol(Protocol.HTTP_1_1).build();
 
     listener.onOpen(webSocket, fancyResponse);
 
@@ -714,7 +711,8 @@ public final class MockWebServer implements TestRule {
     sink.flush();
 
     Buffer body = response.getBody();
-    if (body == null) return;
+    if (body == null)
+      return;
     sleepIfDelayed(response);
     throttledTransfer(response, socket, body, sink, body.size(), false);
   }
@@ -737,19 +735,20 @@ public final class MockWebServer implements TestRule {
    */
   private void throttledTransfer(MockResponse policy, Socket socket, BufferedSource source,
       BufferedSink sink, long byteCount, boolean isRequest) throws IOException {
-    if (byteCount == 0) return;
+    if (byteCount == 0)
+      return;
 
     Buffer buffer = new Buffer();
     long bytesPerPeriod = policy.getThrottleBytesPerPeriod();
     long periodDelayMs = policy.getThrottlePeriod(TimeUnit.MILLISECONDS);
 
     long halfByteCount = byteCount / 2;
-    boolean disconnectHalfway = isRequest
-        ? policy.getSocketPolicy() == DISCONNECT_DURING_REQUEST_BODY
-        : policy.getSocketPolicy() == DISCONNECT_DURING_RESPONSE_BODY;
+    boolean disconnectHalfway =
+        isRequest ? policy.getSocketPolicy() == DISCONNECT_DURING_REQUEST_BODY
+            : policy.getSocketPolicy() == DISCONNECT_DURING_RESPONSE_BODY;
 
     while (!socket.isClosed()) {
-      for (int b = 0; b < bytesPerPeriod; ) {
+      for (int b = 0; b < bytesPerPeriod;) {
         // Ensure we do not read past the allotted bytes in this period.
         long toRead = Math.min(byteCount, bytesPerPeriod - b);
         // Ensure we do not read past halfway if the policy will kill the connection.
@@ -758,7 +757,8 @@ public final class MockWebServer implements TestRule {
         }
 
         long read = source.read(buffer, toRead);
-        if (read == -1) return;
+        if (read == -1)
+          return;
 
         sink.write(buffer, read);
         sink.flush();
@@ -770,7 +770,8 @@ public final class MockWebServer implements TestRule {
           return;
         }
 
-        if (byteCount == 0) return;
+        if (byteCount == 0)
+          return;
       }
 
       if (periodDelayMs != 0) {
@@ -785,7 +786,8 @@ public final class MockWebServer implements TestRule {
 
   private void readEmptyLine(BufferedSource source) throws IOException {
     String line = source.readUtf8LineStrict();
-    if (line.length() != 0) throw new IllegalStateException("Expected empty but was: " + line);
+    if (line.length() != 0)
+      throw new IllegalStateException("Expected empty but was: " + line);
   }
 
   /**
@@ -794,11 +796,13 @@ public final class MockWebServer implements TestRule {
    * dispatchers can vary the response based on timing or the content of the request.
    */
   public void setDispatcher(Dispatcher dispatcher) {
-    if (dispatcher == null) throw new NullPointerException();
+    if (dispatcher == null)
+      throw new NullPointerException();
     this.dispatcher = dispatcher;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "MockWebServer[" + port + "]";
   }
 
@@ -812,7 +816,8 @@ public final class MockWebServer implements TestRule {
       remainingByteCount = bodyLimit;
     }
 
-    @Override public void write(Buffer source, long byteCount) throws IOException {
+    @Override
+    public void write(Buffer source, long byteCount) throws IOException {
       long toRead = Math.min(remainingByteCount, byteCount);
       if (toRead > 0) {
         source.read(buffer, toRead);
@@ -825,15 +830,16 @@ public final class MockWebServer implements TestRule {
       receivedByteCount += byteCount;
     }
 
-    @Override public void flush() throws IOException {
-    }
+    @Override
+    public void flush() throws IOException { }
 
-    @Override public Timeout timeout() {
+    @Override
+    public Timeout timeout() {
       return Timeout.NONE;
     }
 
-    @Override public void close() throws IOException {
-    }
+    @Override
+    public void close() throws IOException { }
   }
 
   /** Processes HTTP requests layered over framed protocols. */
@@ -847,7 +853,8 @@ public final class MockWebServer implements TestRule {
       this.protocol = protocol;
     }
 
-    @Override public void onStream(FramedStream stream) throws IOException {
+    @Override
+    public void onStream(FramedStream stream) throws IOException {
       MockResponse peekedResponse = dispatcher.peek();
       if (peekedResponse.getSocketPolicy() == RESET_STREAM_AT_START) {
         try {
@@ -870,8 +877,8 @@ public final class MockWebServer implements TestRule {
       }
       writeResponse(stream, response);
       if (logger.isLoggable(Level.INFO)) {
-        logger.info(MockWebServer.this + " received request: " + request
-            + " and responded: " + response + " protocol is " + protocol.toString());
+        logger.info(MockWebServer.this + " received request: " + request + " and responded: "
+            + response + " protocol is " + protocol.toString());
       }
     }
 
@@ -920,7 +927,7 @@ public final class MockWebServer implements TestRule {
       if (response.getSocketPolicy() == NO_RESPONSE) {
         return;
       }
-      List<Header> spdyHeaders = new ArrayList<>();
+      List<Header> spdyHeaders = new ArrayList<Header>();
       String[] statusParts = response.getStatus().split(" ", 2);
       if (statusParts.length != 2) {
         throw new AssertionError("Unexpected status: " + response.getStatus());
@@ -951,10 +958,9 @@ public final class MockWebServer implements TestRule {
 
     private void pushPromises(FramedStream stream, List<PushPromise> promises) throws IOException {
       for (PushPromise pushPromise : promises) {
-        List<Header> pushedHeaders = new ArrayList<>();
+        List<Header> pushedHeaders = new ArrayList<Header>();
         pushedHeaders.add(new Header(stream.getConnection().getProtocol() == Protocol.SPDY_3
-            ? Header.TARGET_HOST
-            : Header.TARGET_AUTHORITY, url(pushPromise.path()).host()));
+            ? Header.TARGET_HOST : Header.TARGET_AUTHORITY, url(pushPromise.path()).host()));
         pushedHeaders.add(new Header(Header.TARGET_METHOD, pushPromise.method()));
         pushedHeaders.add(new Header(Header.TARGET_PATH, pushPromise.path()));
         Headers pushPromiseHeaders = pushPromise.headers();

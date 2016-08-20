@@ -49,12 +49,12 @@ public final class JavaNetHeaders {
    * non-null, this value is mapped to the null key.
    */
   public static Map<String, List<String>> toMultimap(Headers headers, String valueForNullKey) {
-    Map<String, List<String>> result = new TreeMap<>(FIELD_NAME_COMPARATOR);
+    Map<String, List<String>> result = new TreeMap<String, List<String>>(FIELD_NAME_COMPARATOR);
     for (int i = 0, size = headers.size(); i < size; i++) {
       String fieldName = headers.name(i);
       String value = headers.value(i);
 
-      List<String> allValues = new ArrayList<>();
+      List<String> allValues = new ArrayList<String>();
       List<String> otherValues = result.get(fieldName);
       if (otherValues != null) {
         allValues.addAll(otherValues);

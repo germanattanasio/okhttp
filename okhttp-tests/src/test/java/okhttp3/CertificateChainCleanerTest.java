@@ -203,7 +203,7 @@ public final class CertificateChainCleanerTest {
 
   @Test public void chainMaxLength() throws Exception {
     List<HeldCertificate> heldCertificates = chainOfLength(10);
-    List<Certificate> certificates = new ArrayList<>();
+    List<Certificate> certificates = new ArrayList<Certificate>();
     for (HeldCertificate heldCertificate : heldCertificates) {
       certificates.add(heldCertificate.certificate);
     }
@@ -216,7 +216,7 @@ public final class CertificateChainCleanerTest {
 
   @Test public void chainTooLong() throws Exception {
     List<HeldCertificate> heldCertificates = chainOfLength(11);
-    List<Certificate> certificates = new ArrayList<>();
+    List<Certificate> certificates = new ArrayList<Certificate>();
     for (HeldCertificate heldCertificate : heldCertificates) {
       certificates.add(heldCertificate.certificate);
     }
@@ -232,7 +232,7 @@ public final class CertificateChainCleanerTest {
 
   /** Returns a chain starting at the leaf certificate and progressing to the root. */
   private List<HeldCertificate> chainOfLength(int length) throws GeneralSecurityException {
-    List<HeldCertificate> result = new ArrayList<>();
+    List<HeldCertificate> result = new ArrayList<HeldCertificate>();
     for (int i = 1; i <= length; i++) {
       result.add(0, new HeldCertificate.Builder()
           .issuedBy(!result.isEmpty() ? result.get(0) : null)
@@ -243,7 +243,7 @@ public final class CertificateChainCleanerTest {
   }
 
   private List<Certificate> list(HeldCertificate... heldCertificates) {
-    List<Certificate> result = new ArrayList<>();
+    List<Certificate> result = new ArrayList<Certificate>();
     for (HeldCertificate heldCertificate : heldCertificates) {
       result.add(heldCertificate.certificate);
     }

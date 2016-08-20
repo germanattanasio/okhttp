@@ -33,7 +33,7 @@ public class Case implements Cloneable {
   private List<Map<String, String>> headers;
 
   public List<Header> getHeaders() {
-    List<Header> result = new ArrayList<>();
+    List<Header> result = new ArrayList<Header>();
     for (Map<String, String> inputHeader : headers) {
       Map.Entry<String, String> entry = inputHeader.entrySet().iterator().next();
       result.add(new Header(entry.getKey(), entry.getValue()));
@@ -58,7 +58,7 @@ public class Case implements Cloneable {
     Case result = new Case();
     result.seqno = seqno;
     result.wire = wire;
-    result.headers = new ArrayList<>();
+    result.headers = new ArrayList<Header>();
     for (Map<String, String> header : headers) {
       result.headers.add(new LinkedHashMap<String, String>(header));
     }

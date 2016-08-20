@@ -257,7 +257,7 @@ public class CookiesTest {
         .cookieJar(new JavaNetCookieJar(new CookieManager() {
           @Override public Map<String, List<String>> get(URI uri,
               Map<String, List<String>> requestHeaders) throws IOException {
-            Map<String, List<String>> result = new HashMap<>();
+            Map<String, List<String>> result = new HashMap<String, List<String>>();
             result.put("COOKIE", Collections.singletonList("Bar=bar"));
             result.put("cooKIE2", Collections.singletonList("Baz=baz"));
             return result;

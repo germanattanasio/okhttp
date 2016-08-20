@@ -212,7 +212,7 @@ public final class HttpLoggingInterceptor implements Interceptor {
       response = chain.proceed(request);
     } catch (Exception e) {
       logger.log("<-- HTTP FAILED: " + e);
-      throw e;
+      throw new IOException(e);
     }
     long tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
 

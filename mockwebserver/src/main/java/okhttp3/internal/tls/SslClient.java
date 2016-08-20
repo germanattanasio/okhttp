@@ -1,24 +1,21 @@
 /*
  * Copyright (C) 2012 Square, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package okhttp3.internal.tls;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -28,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -54,29 +52,27 @@ public final class SslClient {
 
   /** Returns an SSL client for this host's localhost address. */
   public static synchronized SslClient localhost() {
-    if (localhost != null) return localhost;
+    if (localhost != null)
+      return localhost;
 
     try {
       // Generate a self-signed cert for the server to serve and the client to trust.
-      HeldCertificate heldCertificate = new HeldCertificate.Builder()
-          .serialNumber("1")
-          .commonName(InetAddress.getByName("localhost").getHostName())
-          .build();
+      HeldCertificate heldCertificate = new HeldCertificate.Builder().serialNumber("1")
+          .commonName(InetAddress.getByName("localhost").getHostName()).build();
 
-      localhost = new Builder()
-          .certificateChain(heldCertificate.keyPair, heldCertificate.certificate)
-          .addTrustedCertificate(heldCertificate.certificate)
-          .build();
+      localhost =
+          new Builder().certificateChain(heldCertificate.keyPair, heldCertificate.certificate)
+              .addTrustedCertificate(heldCertificate.certificate).build();
 
       return localhost;
-    } catch (GeneralSecurityException | UnknownHostException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   public static class Builder {
-    private final List<X509Certificate> chainCertificates = new ArrayList<>();
-    private final List<X509Certificate> certificates = new ArrayList<>();
+    private final List<X509Certificate> chainCertificates = new ArrayList<X509Certificate>();
+    private final List<X509Certificate> certificates = new ArrayList<X509Certificate>();
     private KeyPair keyPair;
 
     /**
@@ -117,8 +113,8 @@ public final class SslClient {
         KeyStore keyStore = newEmptyKeyStore(password);
 
         if (keyPair != null) {
-          Certificate[] certificates = chainCertificates.toArray(
-              new Certificate[chainCertificates.size()]);
+          Certificate[] certificates =
+              chainCertificates.toArray(new Certificate[chainCertificates.size()]);
           keyStore.setKeyEntry("private", keyPair.getPrivate(), password, certificates);
         }
 
@@ -127,17 +123,17 @@ public final class SslClient {
         }
 
         // Wrap it up in an SSL context.
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
-            KeyManagerFactory.getDefaultAlgorithm());
+        KeyManagerFactory keyManagerFactory =
+            KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStore, password);
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-            TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory trustManagerFactory =
+            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(keyStore);
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
 
         if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
-          throw new IllegalStateException("Unexpected default trust managers:"
-              + Arrays.toString(trustManagers));
+          throw new IllegalStateException(
+              "Unexpected default trust managers:" + Arrays.toString(trustManagers));
         }
 
         SSLContext sslContext = SSLContext.getInstance("TLS");

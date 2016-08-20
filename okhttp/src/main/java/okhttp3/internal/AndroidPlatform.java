@@ -15,16 +15,17 @@
  */
 package okhttp3.internal;
 
-import android.util.Log;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
+
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
+
+import android.util.Log;
 import okhttp3.Protocol;
 
 /** Android 2.3 or better. */
@@ -133,13 +134,14 @@ class AndroidPlatform extends Platform {
       Object networkSecurityPolicy = getInstanceMethod.invoke(null);
       Method isCleartextTrafficPermittedMethod = networkPolicyClass
           .getMethod("isCleartextTrafficPermitted");
-      boolean cleartextPermitted = (boolean) isCleartextTrafficPermittedMethod
+      Boolean cleartextPermitted = (Boolean) isCleartextTrafficPermittedMethod
           .invoke(networkSecurityPolicy);
+      if (cleartextPermitted == null)
+        cleartextPermitted = false;
       return cleartextPermitted;
     } catch (ClassNotFoundException e) {
       return super.isCleartextTrafficPermitted();
-    } catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException
-        | InvocationTargetException e) {
+    } catch (Exception e) {
       throw new AssertionError();
     }
   }
@@ -156,9 +158,9 @@ class AndroidPlatform extends Platform {
             "org.apache.harmony.xnet.provider.jsse.SSLParametersImpl");
       }
 
-      OptionalMethod<Socket> setUseSessionTickets = new OptionalMethod<>(
+      OptionalMethod<Socket> setUseSessionTickets = new OptionalMethod<Socket>(
           null, "setUseSessionTickets", boolean.class);
-      OptionalMethod<Socket> setHostname = new OptionalMethod<>(
+      OptionalMethod<Socket> setHostname = new OptionalMethod<Socket>(
           null, "setHostname", String.class);
       OptionalMethod<Socket> getAlpnSelectedProtocol = null;
       OptionalMethod<Socket> setAlpnProtocols = null;
@@ -166,8 +168,10 @@ class AndroidPlatform extends Platform {
       // Attempt to find Android 5.0+ APIs.
       try {
         Class.forName("android.net.Network"); // Arbitrary class added in Android 5.0.
-        getAlpnSelectedProtocol = new OptionalMethod<>(byte[].class, "getAlpnSelectedProtocol");
-        setAlpnProtocols = new OptionalMethod<>(null, "setAlpnProtocols", byte[].class);
+        getAlpnSelectedProtocol = new OptionalMethod<Socket>(
+            byte[].class, "getAlpnSelectedProtocol"
+        );
+        setAlpnProtocols = new OptionalMethod<Socket>(null, "setAlpnProtocols", byte[].class);
       } catch (ClassNotFoundException ignored) {
       }
 

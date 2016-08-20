@@ -43,7 +43,7 @@ public final class MockResponse implements Cloneable {
   private long bodyDelayAmount = 0;
   private TimeUnit bodyDelayUnit = TimeUnit.MILLISECONDS;
 
-  private List<PushPromise> promises = new ArrayList<>();
+  private List<PushPromise> promises = new ArrayList<PushPromise>();
   private Settings settings;
   private WebSocketListener webSocketListener;
 
@@ -57,7 +57,7 @@ public final class MockResponse implements Cloneable {
     try {
       MockResponse result = (MockResponse) super.clone();
       result.headers = headers.build().newBuilder();
-      result.promises = new ArrayList<>(promises);
+      result.promises = new ArrayList<PushPromise>(promises);
       return result;
     } catch (CloneNotSupportedException e) {
       throw new AssertionError();

@@ -82,7 +82,7 @@ import static okhttp3.internal.Platform.WARN;
  * are immutable.
  */
 public class HttpURLConnectionImpl extends HttpURLConnection {
-  private static final Set<String> METHODS = new LinkedHashSet<>(
+  private static final Set<String> METHODS = new LinkedHashSet<String>(
       Arrays.asList("OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "PATCH"));
   private static final RequestBody EMPTY_REQUEST_BODY = RequestBody.create(null, new byte[0]);
 
@@ -617,7 +617,7 @@ public class HttpURLConnectionImpl extends HttpURLConnection {
    * defined in {@link Protocol OkHttp's protocol enumeration}.
    */
   private void setProtocols(String protocolsString, boolean append) {
-    List<Protocol> protocolsList = new ArrayList<>();
+    List<Protocol> protocolsList = new ArrayList<Protocol>();
     if (append) {
       protocolsList.addAll(client.protocols());
     }

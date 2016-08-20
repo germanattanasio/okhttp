@@ -264,7 +264,7 @@ public final class ConnectionSpecTest {
         .allEnabledTlsVersions()
         .build();
 
-    Set<Object> set = new CopyOnWriteArraySet<>();
+    Set<Object> set = new CopyOnWriteArraySet<Object>();
     assertTrue(set.add(ConnectionSpec.MODERN_TLS));
     assertTrue(set.add(ConnectionSpec.COMPATIBLE_TLS));
     assertTrue(set.add(ConnectionSpec.CLEARTEXT));
@@ -298,6 +298,6 @@ public final class ConnectionSpecTest {
   }
 
   private static <T> Set<T> set(T... values) {
-    return new LinkedHashSet<>(Arrays.asList(values));
+    return new LinkedHashSet<T>(Arrays.asList(values));
   }
 }
