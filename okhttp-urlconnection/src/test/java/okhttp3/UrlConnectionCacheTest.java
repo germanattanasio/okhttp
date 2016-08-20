@@ -44,6 +44,7 @@ import javax.net.ssl.SSLSession;
 import okhttp3.internal.Internal;
 import okhttp3.internal.Util;
 import okhttp3.internal.io.InMemoryFileSystem;
+import okhttp3.internal.platform.Platform;
 import okhttp3.internal.tls.SslClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -174,6 +175,9 @@ public final class UrlConnectionCacheTest {
       response.addHeader("Proxy-Authenticate: Basic realm=\"protected area\"");
     } else if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
       response.addHeader("WWW-Authenticate: Basic realm=\"protected area\"");
+    } else if (responseCode == HttpURLConnection.HTTP_NO_CONTENT
+        || responseCode == HttpURLConnection.HTTP_RESET) {
+      response.setBody(""); // We forbid bodies for 204 and 205.
     }
     server.enqueue(response);
 
@@ -1616,6 +1620,7 @@ public final class UrlConnectionCacheTest {
 
     URL url = server.url("/").url();
     String urlKey = Util.md5Hex(url.toString());
+    String prefix = Platform.get().getPrefix();
     String entryMetadata = ""
         + "" + url + "\n"
         + "GET\n"
@@ -1626,7 +1631,7 @@ public final class UrlConnectionCacheTest {
         + ":version: HTTP/1.1\n"
         + "etag: foo\n"
         + "content-length: 3\n"
-        + "OkHttp-Received-Millis: " + System.currentTimeMillis() + "\n"
+        + prefix + "-Received-Millis: " + System.currentTimeMillis() + "\n"
         + "X-Android-Response-Source: NETWORK 200\n"
         + "OkHttp-Sent-Millis: " + System.currentTimeMillis() + "\n"
         + "\n"

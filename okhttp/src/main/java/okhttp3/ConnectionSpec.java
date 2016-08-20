@@ -20,8 +20,8 @@ import java.util.List;
 import javax.net.ssl.SSLSocket;
 
 import static okhttp3.internal.Util.concat;
-import static okhttp3.internal.Util.contains;
 import static okhttp3.internal.Util.immutableList;
+import static okhttp3.internal.Util.indexOf;
 import static okhttp3.internal.Util.intersect;
 
 /**
@@ -38,24 +38,26 @@ import static okhttp3.internal.Util.intersect;
  */
 public final class ConnectionSpec {
 
-  // This is a subset of the cipher suites supported in Chrome 46, current as of 2015-11-05.
-  // All of these suites are available on Android 5.0; earlier releases support a subset of
-  // these suites. https://github.com/square/okhttp/issues/330
+  // This is nearly equal to the cipher suites supported in Chrome 51, current as of 2016-05-25.
+  // All of these suites are available on Android 7.0; earlier releases support a subset of these
+  // suites. https://github.com/square/okhttp/issues/1972
   private static final CipherSuite[] APPROVED_CIPHER_SUITES = new CipherSuite[] {
       CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
       CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-      CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+      CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+      CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+      CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+      CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
 
       // Note that the following cipher suites are all on HTTP/2's bad cipher suites list. We'll
       // continue to include them until better suites are commonly available. For example, none
       // of the better cipher suites listed above shipped with Android 4.4 or Java 7.
-      CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
       CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
       CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+      CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
       CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-      CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-      CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
       CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+      CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
       CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
       CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
       CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
@@ -151,7 +153,7 @@ public final class ConnectionSpec {
 
     // In accordance with https://tools.ietf.org/html/draft-ietf-tls-downgrade-scsv-00
     // the SCSV cipher is added to signal that a protocol fallback has taken place.
-    if (isFallback && contains(sslSocket.getSupportedCipherSuites(), "TLS_FALLBACK_SCSV")) {
+    if (isFallback && indexOf(sslSocket.getSupportedCipherSuites(), "TLS_FALLBACK_SCSV") != -1) {
       cipherSuitesIntersection = concat(cipherSuitesIntersection, "TLS_FALLBACK_SCSV");
     }
 
@@ -200,7 +202,7 @@ public final class ConnectionSpec {
       return false;
     }
     for (String toFind : a) {
-      if (contains(b, toFind)) {
+      if (indexOf(b, toFind) != -1) {
         return true;
       }
     }

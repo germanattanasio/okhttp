@@ -31,7 +31,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.internal.Internal;
 import okhttp3.internal.Util;
-import okhttp3.internal.http.StreamAllocation;
+import okhttp3.internal.connection.StreamAllocation;
 import okhttp3.internal.ws.RealWebSocket;
 import okhttp3.internal.ws.WebSocketProtocol;
 import okio.ByteString;
@@ -105,7 +105,8 @@ public final class WebSocketCall {
       }
     };
     // TODO call.enqueue(responseCallback, true);
-    Internal.instance.callEnqueue(call, responseCallback, true);
+    Internal.instance.setCallWebSocket(call);
+    call.enqueue(responseCallback);
   }
 
   /** Cancels the request, if possible. Requests that are already complete cannot be canceled. */
@@ -156,7 +157,7 @@ public final class WebSocketCall {
   private static class StreamWebSocket extends RealWebSocket {
     static RealWebSocket create(StreamAllocation streamAllocation, Response response,
         Random random, WebSocketListener listener) {
-      String url = response.request().url().toString();
+      String url = response.request().url().redact().toString();
       ThreadPoolExecutor replyExecutor =
           new ThreadPoolExecutor(1, 1, 1, SECONDS, new LinkedBlockingDeque<Runnable>(),
               Util.threadFactory(Util.format("OkHttp %s WebSocket", url), true));
@@ -179,7 +180,7 @@ public final class WebSocketCall {
     @Override protected void close() throws IOException {
       replyExecutor.shutdown();
       streamAllocation.noNewStreams();
-      streamAllocation.streamFinished(true, streamAllocation.stream());
+      streamAllocation.streamFinished(true, streamAllocation.codec());
     }
   }
 }

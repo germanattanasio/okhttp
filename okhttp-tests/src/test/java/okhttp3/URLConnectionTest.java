@@ -85,9 +85,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static okhttp3.TestUtil.defaultClient;
 import static okhttp3.internal.Util.UTF_8;
-import static okhttp3.internal.http.OkHeaders.SELECTED_PROTOCOL;
 import static okhttp3.internal.http.StatusLine.HTTP_PERM_REDIRECT;
 import static okhttp3.internal.http.StatusLine.HTTP_TEMP_REDIRECT;
+import static okhttp3.internal.huc.OkHttpURLConnection.SELECTED_PROTOCOL;
 import static okhttp3.mockwebserver.SocketPolicy.DISCONNECT_AFTER_REQUEST;
 import static okhttp3.mockwebserver.SocketPolicy.DISCONNECT_AT_END;
 import static okhttp3.mockwebserver.SocketPolicy.DISCONNECT_AT_START;
@@ -322,6 +322,29 @@ public final class URLConnectionTest {
     assertEquals("body", server.takeRequest().getBody().readUtf8());
   }
 
+  @Test public void streamedBodyIsNotRetried() throws Exception {
+    server.enqueue(new MockResponse()
+        .setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST));
+
+    urlFactory = new OkUrlFactory(new OkHttpClient.Builder()
+        .dns(new DoubleInetAddressDns())
+        .build());
+    HttpURLConnection connection = urlFactory.open(server.url("/").url());
+    connection.setDoOutput(true);
+    connection.setChunkedStreamingMode(100);
+    OutputStream os = connection.getOutputStream();
+    os.write("OutputStream is no fun.".getBytes("UTF-8"));
+    os.close();
+
+    try {
+      connection.getResponseCode();
+      fail();
+    } catch (IOException expected) {
+    }
+
+    assertEquals(1, server.getRequestCount());
+  }
+
   @Test public void getErrorStreamOnSuccessfulRequest() throws Exception {
     server.enqueue(new MockResponse().setBody("A"));
     connection = urlFactory.open(server.url("/").url());
@@ -405,6 +428,9 @@ public final class URLConnectionTest {
   @Test public void invalidHost() throws Exception {
     // Note that 1234.1.1.1 is an invalid host in a URI, but URL isn't as strict.
     URL url = new URL("http://1234.1.1.1/index.html");
+    urlFactory.setClient(urlFactory.client().newBuilder()
+        .dns(new FakeDns())
+        .build());
     HttpURLConnection connection = urlFactory.open(url);
     try {
       connection.connect();
@@ -1493,11 +1519,6 @@ public final class URLConnectionTest {
     postBodyRetransmittedAfterAuthorizationFail("abc");
   }
 
-  @Test public void postBodyRetransmittedAfterAuthorizationFail_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    postBodyRetransmittedAfterAuthorizationFail("abc");
-  }
-
   @Test public void postBodyRetransmittedAfterAuthorizationFail_HTTP_2() throws Exception {
     enableProtocol(Protocol.HTTP_2);
     postBodyRetransmittedAfterAuthorizationFail("abc");
@@ -1505,11 +1526,6 @@ public final class URLConnectionTest {
 
   /** Don't explode when resending an empty post. https://github.com/square/okhttp/issues/1131 */
   @Test public void postEmptyBodyRetransmittedAfterAuthorizationFail() throws Exception {
-    postBodyRetransmittedAfterAuthorizationFail("");
-  }
-
-  @Test public void postEmptyBodyRetransmittedAfterAuthorizationFail_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     postBodyRetransmittedAfterAuthorizationFail("");
   }
 
@@ -1533,6 +1549,7 @@ public final class URLConnectionTest {
     outputStream.write(body.getBytes("UTF-8"));
     outputStream.close();
     assertEquals(200, connection.getResponseCode());
+    connection.getInputStream().close();
 
     RecordedRequest recordedRequest1 = server.takeRequest();
     assertEquals("POST", recordedRequest1.getMethod());
@@ -2068,7 +2085,7 @@ public final class URLConnectionTest {
   }
 
   @Test public void redirectWithProxySelector() throws Exception {
-    final List<URI> proxySelectionRequests = new ArrayList<URI>();
+    final List<URI> proxySelectionRequests = new ArrayList<>();
     urlFactory.setClient(urlFactory.client().newBuilder()
         .proxySelector(new ProxySelector() {
           @Override public List<Proxy> select(URI uri) {
@@ -2309,7 +2326,6 @@ public final class URLConnectionTest {
     } catch (ProtocolException expected) {
       assertEquals(HttpURLConnection.HTTP_MOVED_TEMP, connection.getResponseCode());
       assertEquals("Too many follow-up requests: 21", expected.getMessage());
-      assertContent("Redirecting to /21", connection);
       assertEquals(server.url("/20").url(), connection.getURL());
     }
   }
@@ -2384,6 +2400,7 @@ public final class URLConnectionTest {
 
     assertEquals(408, connection.getResponseCode());
     assertEquals(1, server.getRequestCount());
+    connection.getErrorStream().close();
   }
 
   @Test public void readTimeouts() throws IOException {
@@ -2518,9 +2535,8 @@ public final class URLConnectionTest {
    * https://code.google.com/p/android/issues/detail?id=41576
    */
   @Test public void sameConnectionRedirectAndReuse() throws Exception {
-    // TODO(jwilson): this behavior shouldn't rely on having another IP address to attempt.
     urlFactory.setClient(urlFactory.client().newBuilder()
-        .dns(new DoubleInetAddressDns())
+        .dns(new SingleInetAddressDns())
         .build());
     server.enqueue(new MockResponse()
         .setResponseCode(HttpURLConnection.HTTP_MOVED_TEMP)
@@ -2536,12 +2552,17 @@ public final class URLConnectionTest {
   }
 
   @Test public void responseCodeDisagreesWithHeaders() throws IOException, InterruptedException {
-    server.enqueue(new MockResponse().setResponseCode(HttpURLConnection.HTTP_NO_CONTENT)
+    server.enqueue(new MockResponse()
+        .setResponseCode(HttpURLConnection.HTTP_NO_CONTENT)
         .setBody("This body is not allowed!"));
 
     URLConnection connection = urlFactory.open(server.url("/").url());
-    assertEquals("This body is not allowed!",
-        readAscii(connection.getInputStream(), Integer.MAX_VALUE));
+    try {
+      connection.getInputStream();
+      fail();
+    } catch (IOException expected) {
+      assertEquals("HTTP 204 had non-zero Content-Length: 25", expected.getMessage());
+    }
   }
 
   @Test public void singleByteReadIsSigned() throws IOException {
@@ -2614,6 +2635,9 @@ public final class URLConnectionTest {
   }
 
   @Test public void dnsFailureThrowsIOException() throws IOException {
+    urlFactory.setClient(urlFactory.client().newBuilder()
+        .dns(new FakeDns())
+        .build());
     connection = urlFactory.open(new URL("http://host.unlikelytld"));
     try {
       connection.connect();
@@ -2949,16 +2973,6 @@ public final class URLConnectionTest {
     fail("TODO");
   }
 
-  @Test @Ignore public void headerNamesContainingNullCharacter() {
-    // This is relevant for SPDY
-    fail("TODO");
-  }
-
-  @Test @Ignore public void headerValuesContainingNullCharacter() {
-    // This is relevant for SPDY
-    fail("TODO");
-  }
-
   @Test public void emptyRequestHeaderValueIsAllowed() throws Exception {
     server.enqueue(new MockResponse().setBody("body"));
     connection = urlFactory.open(server.url("/").url());
@@ -3153,10 +3167,6 @@ public final class URLConnectionTest {
     }
   }
 
-  @Test public void setsNegotiatedProtocolHeader_SPDY_3() throws Exception {
-    setsNegotiatedProtocolHeader(Protocol.SPDY_3);
-  }
-
   @Test public void setsNegotiatedProtocolHeader_HTTP_2() throws Exception {
     setsNegotiatedProtocolHeader(Protocol.HTTP_2);
   }
@@ -3192,11 +3202,6 @@ public final class URLConnectionTest {
     zeroLengthPayload("POST");
   }
 
-  @Test public void zeroLengthPost_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    zeroLengthPost();
-  }
-
   @Test public void zeroLengthPost_HTTP_2() throws Exception {
     enableProtocol(Protocol.HTTP_2);
     zeroLengthPost();
@@ -3205,11 +3210,6 @@ public final class URLConnectionTest {
   /** For example, creating an Amazon S3 bucket ends up as a zero-length POST. */
   @Test public void zeroLengthPut() throws IOException, InterruptedException {
     zeroLengthPayload("PUT");
-  }
-
-  @Test public void zeroLengthPut_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    zeroLengthPut();
   }
 
   @Test public void zeroLengthPut_HTTP_2() throws Exception {
@@ -3256,7 +3256,7 @@ public final class URLConnectionTest {
 
   @Test public void setProtocolsWithoutHttp11() throws Exception {
     try {
-      new OkHttpClient.Builder().protocols(Arrays.asList(Protocol.SPDY_3));
+      new OkHttpClient.Builder().protocols(Arrays.asList(Protocol.HTTP_2));
       fail();
     } catch (IllegalArgumentException expected) {
     }
@@ -3461,6 +3461,7 @@ public final class URLConnectionTest {
   @Test public void setSslSocketFactoryFailsOnJdk9() throws Exception {
     assumeTrue(getPlatform().equals("jdk9"));
 
+    enableProtocol(Protocol.HTTP_2);
     URL url = server.url("/").url();
     HttpsURLConnection connection = (HttpsURLConnection) urlFactory.open(url);
     try {
@@ -3468,6 +3469,65 @@ public final class URLConnectionTest {
       fail();
     } catch (UnsupportedOperationException expected) {
     }
+  }
+
+  /** Confirm that runtime exceptions thrown inside of OkHttp propagate to the caller. */
+  @Test public void unexpectedExceptionSync() throws Exception {
+    urlFactory.setClient(urlFactory.client().newBuilder()
+        .dns(new Dns() {
+          @Override public List<InetAddress> lookup(String hostname) {
+            throw new RuntimeException("boom!");
+          }
+        })
+        .build());
+
+    server.enqueue(new MockResponse());
+
+    HttpURLConnection connection = urlFactory.open(server.url("/").url());
+    try {
+      connection.getResponseCode(); // Use the synchronous implementation.
+      fail();
+    } catch (RuntimeException expected) {
+      assertEquals("boom!", expected.getMessage());
+    }
+  }
+
+  /** Confirm that runtime exceptions thrown inside of OkHttp propagate to the caller. */
+  @Test public void unexpectedExceptionAsync() throws Exception {
+    urlFactory.setClient(urlFactory.client().newBuilder()
+        .dns(new Dns() {
+          @Override public List<InetAddress> lookup(String hostname) {
+            throw new RuntimeException("boom!");
+          }
+        })
+        .build());
+
+    server.enqueue(new MockResponse());
+
+    HttpURLConnection connection = urlFactory.open(server.url("/").url());
+    try {
+      connection.connect(); // Force the async implementation.
+      fail();
+    } catch (RuntimeException expected) {
+      assertEquals("boom!", expected.getMessage());
+    }
+  }
+
+  @Test public void callsNotManagedByDispatcher() throws Exception {
+    server.enqueue(new MockResponse()
+        .setBody("abc"));
+
+    Dispatcher dispatcher = urlFactory.client().dispatcher();
+    assertEquals(0, dispatcher.runningCallsCount());
+
+    connection = urlFactory.open(server.url("/").url());
+    assertEquals(0, dispatcher.runningCallsCount());
+
+    connection.connect();
+    assertEquals(0, dispatcher.runningCallsCount());
+
+    assertContent("abc", connection);
+    assertEquals(0, dispatcher.runningCallsCount());
   }
 
   private void testInstanceFollowsRedirects(String spec) throws Exception {
@@ -3605,7 +3665,7 @@ public final class URLConnectionTest {
   }
 
   private static class RecordingTrustManager implements X509TrustManager {
-    private final List<String> calls = new ArrayList<String>();
+    private final List<String> calls = new ArrayList<>();
     private final X509TrustManager delegate;
 
     public RecordingTrustManager(X509TrustManager delegate) {
@@ -3627,7 +3687,7 @@ public final class URLConnectionTest {
     }
 
     private String certificatesToString(X509Certificate[] certificates) {
-      List<String> result = new ArrayList<String>();
+      List<String> result = new ArrayList<>();
       for (X509Certificate certificate : certificates) {
         result.add(certificate.getSubjectDN() + " " + certificate.getSerialNumber());
       }

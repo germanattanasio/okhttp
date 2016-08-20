@@ -29,10 +29,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -125,29 +123,6 @@ public final class Util {
       } catch (Exception ignored) {
       }
     }
-  }
-
-  /**
-   * Closes {@code a} and {@code b}. If either close fails, this completes the other close and
-   * rethrows the first encountered exception.
-   */
-  public static void closeAll(Closeable a, Closeable b) throws IOException {
-    Throwable thrown = null;
-    try {
-      a.close();
-    } catch (Throwable e) {
-      thrown = e;
-    }
-    try {
-      b.close();
-    } catch (Throwable e) {
-      if (thrown == null) thrown = e;
-    }
-    if (thrown == null) return;
-    if (thrown instanceof IOException) throw (IOException) thrown;
-    if (thrown instanceof RuntimeException) throw (RuntimeException) thrown;
-    if (thrown instanceof Error) throw (Error) thrown;
-    throw new AssertionError(thrown);
   }
 
   /**
@@ -244,11 +219,6 @@ public final class Util {
     return Collections.unmodifiableList(Arrays.asList(elements.clone()));
   }
 
-  /** Returns an immutable copy of {@code map}. */
-  public static <K, V> Map<K, V> immutableMap(Map<K, V> map) {
-    return Collections.unmodifiableMap(new LinkedHashMap<>(map));
-  }
-
   public static ThreadFactory threadFactory(final String name, final boolean daemon) {
     return new ThreadFactory() {
       @Override public Thread newThread(Runnable runnable) {
@@ -321,8 +291,11 @@ public final class Util {
         && e.getMessage().contains("getsockname failed");
   }
 
-  public static boolean contains(String[] array, String value) {
-    return Arrays.asList(array).contains(value);
+  public static <T> int indexOf(T[] array, T value) {
+    for (int i = 0, size = array.length; i < size; i++) {
+      if (equal(array[i], value)) return i;
+    }
+    return -1;
   }
 
   public static String[] concat(String[] array, String value) {

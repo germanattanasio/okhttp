@@ -18,9 +18,7 @@ package okhttp3;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSocketFactory;
 import okhttp3.internal.tls.SslClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -188,6 +186,9 @@ public final class ConnectionReuseTest {
     assertEquals("a", responseA.body().string());
     assertEquals(0, server.takeRequest().getSequenceNumber());
 
+    // Give the socket a chance to become stale.
+    Thread.sleep(250);
+
     Request requestB = new Request.Builder()
         .url(server.url("/"))
         .post(RequestBody.create(MediaType.parse("text/plain"), "b"))
@@ -250,11 +251,9 @@ public final class ConnectionReuseTest {
     response.body().close();
 
     // This client shares a connection pool but has a different SSL socket factory.
-    SSLContext sslContext2 = SSLContext.getInstance("TLS");
-    sslContext2.init(null, null, null);
-    SSLSocketFactory sslSocketFactory2 = sslContext2.getSocketFactory();
+    SslClient sslClient2 = new SslClient.Builder().build();
     OkHttpClient anotherClient = client.newBuilder()
-        .sslSocketFactory(sslSocketFactory2)
+        .sslSocketFactory(sslClient2.socketFactory, sslClient2.trustManager)
         .build();
 
     // This client fails to connect because the new SSL socket factory refuses.

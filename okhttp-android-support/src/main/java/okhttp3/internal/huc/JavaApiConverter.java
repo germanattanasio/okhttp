@@ -45,10 +45,11 @@ import okhttp3.ResponseBody;
 import okhttp3.internal.Internal;
 import okhttp3.internal.JavaNetHeaders;
 import okhttp3.internal.Util;
-import okhttp3.internal.http.CacheRequest;
+import okhttp3.internal.cache.CacheRequest;
+import okhttp3.internal.http.HttpHeaders;
 import okhttp3.internal.http.HttpMethod;
-import okhttp3.internal.http.OkHeaders;
 import okhttp3.internal.http.StatusLine;
+import okhttp3.internal.platform.Platform;
 import okio.BufferedSource;
 import okio.Okio;
 import okio.Sink;
@@ -58,6 +59,12 @@ import okio.Sink;
  */
 public final class JavaApiConverter {
   private static final RequestBody EMPTY_REQUEST_BODY = RequestBody.create(null, new byte[0]);
+
+  /** Synthetic response header: the local time when the request was sent. */
+  private static final String SENT_MILLIS = Platform.get().getPrefix() + "-Sent-Millis";
+
+  /** Synthetic response header: the local time when the response was received. */
+  private static final String RECEIVED_MILLIS = Platform.get().getPrefix() + "-Received-Millis";
 
   private JavaApiConverter() {
   }
@@ -155,11 +162,11 @@ public final class JavaApiConverter {
   }
 
   private static Headers varyHeaders(URLConnection urlConnection, Headers responseHeaders) {
-    if (OkHeaders.hasVaryAll(responseHeaders)) {
+    if (HttpHeaders.hasVaryAll(responseHeaders)) {
       // "*" means that this will be treated as uncacheable anyway.
       return null;
     }
-    Set<String> varyFields = OkHeaders.varyFields(responseHeaders);
+    Set<String> varyFields = HttpHeaders.varyFields(responseHeaders);
     if (varyFields.isEmpty()) {
       return new Headers.Builder().build();
     }
@@ -205,11 +212,11 @@ public final class JavaApiConverter {
     // Build a cache request for the response to use.
     Headers responseHeaders = createHeaders(javaResponse.getHeaders());
     Headers varyHeaders;
-    if (OkHeaders.hasVaryAll(responseHeaders)) {
+    if (HttpHeaders.hasVaryAll(responseHeaders)) {
       // "*" means that this will be treated as uncacheable anyway.
       varyHeaders = new Headers.Builder().build();
     } else {
-      varyHeaders = OkHeaders.varyHeaders(request.headers(), responseHeaders);
+      varyHeaders = HttpHeaders.varyHeaders(request.headers(), responseHeaders);
     }
 
     Request cacheRequest = new Request.Builder()
@@ -397,8 +404,8 @@ public final class JavaApiConverter {
 
   private static Headers withSyntheticHeaders(Response okResponse) {
     return okResponse.headers().newBuilder()
-        .add(OkHeaders.SENT_MILLIS, Long.toString(okResponse.sentRequestAtMillis()))
-        .add(OkHeaders.RECEIVED_MILLIS, Long.toString(okResponse.receivedResponseAtMillis()))
+        .add(SENT_MILLIS, Long.toString(okResponse.sentRequestAtMillis()))
+        .add(RECEIVED_MILLIS, Long.toString(okResponse.receivedResponseAtMillis()))
         .build();
   }
 
@@ -448,11 +455,11 @@ public final class JavaApiConverter {
         continue;
       }
       if (okResponseBuilder != null && javaHeader.getValue().size() == 1) {
-        if (name.equals(OkHeaders.SENT_MILLIS)) {
+        if (name.equals(SENT_MILLIS)) {
           okResponseBuilder.sentRequestAtMillis(Long.valueOf(javaHeader.getValue().get(0)));
           continue;
         }
-        if (name.equals(OkHeaders.RECEIVED_MILLIS)) {
+        if (name.equals(RECEIVED_MILLIS)) {
           okResponseBuilder.receivedResponseAtMillis(Long.valueOf(javaHeader.getValue().get(0)));
           continue;
         }
@@ -512,7 +519,7 @@ public final class JavaApiConverter {
 
       @Override
       public long contentLength() {
-        return OkHeaders.contentLength(okHeaders);
+        return HttpHeaders.contentLength(okHeaders);
       }
 
       @Override public BufferedSource source() {
@@ -851,18 +858,6 @@ public final class JavaApiConverter {
 
     @Override public SSLSocketFactory getSSLSocketFactory() {
       throw throwRequestSslAccessException();
-    }
-
-    @Override public long getContentLengthLong() {
-      return delegate.getContentLengthLong();
-    }
-
-    @Override public void setFixedLengthStreamingMode(long contentLength) {
-      delegate.setFixedLengthStreamingMode(contentLength);
-    }
-
-    @Override public long getHeaderFieldLong(String field, long defaultValue) {
-      return delegate.getHeaderFieldLong(field, defaultValue);
     }
   }
 

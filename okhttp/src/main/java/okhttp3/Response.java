@@ -19,7 +19,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import okhttp3.internal.http.OkHeaders;
+import okhttp3.internal.http.HttpHeaders;
 import okio.Buffer;
 import okio.BufferedSource;
 
@@ -71,15 +71,14 @@ public final class Response implements Closeable {
   }
 
   /**
-   * The wire-level request that initiated this HTTP response. This is not
-   * necessarily the same request issued by the application:
+   * The wire-level request that initiated this HTTP response. This is not necessarily the same
+   * request issued by the application:
    *
    * <ul>
-   *     <li>It may be transformed by the HTTP client. For example, the client
-   *         may copy headers like {@code Content-Length} from the request body.
-   *     <li>It may be the request generated in response to an HTTP redirect or
-   *         authentication challenge. In this case the request URL may be
-   *         different than the initial request URL.
+   *     <li>It may be transformed by the HTTP client. For example, the client may copy headers like
+   *         {@code Content-Length} from the request body.
+   *     <li>It may be the request generated in response to an HTTP redirect or authentication
+   *         challenge. In this case the request URL may be different than the initial request URL.
    * </ul>
    */
   public Request request() {
@@ -234,7 +233,7 @@ public final class Response implements Closeable {
     } else {
       return Collections.emptyList();
     }
-    return OkHeaders.parseChallenges(headers(), responseField);
+    return HttpHeaders.parseChallenges(headers(), responseField);
   }
 
   /**

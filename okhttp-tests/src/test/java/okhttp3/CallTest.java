@@ -45,7 +45,9 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -79,6 +81,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 
 import static java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER;
+import static okhttp3.TestUtil.awaitGarbageCollection;
 import static okhttp3.TestUtil.defaultClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -181,11 +184,6 @@ public final class CallTest {
     get();
   }
 
-  @Test public void get_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    get();
-  }
-
   @Test public void repeatedHeaderNames() throws Exception {
     server.enqueue(new MockResponse()
         .addHeader("B", "123")
@@ -197,11 +195,6 @@ public final class CallTest {
 
     RecordedRequest recordedRequest = server.takeRequest();
     assertEquals(Arrays.asList("345", "456"), recordedRequest.getHeaders().values("A"));
-  }
-
-  @Test public void repeatedHeaderNames_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    repeatedHeaderNames();
   }
 
   @Test public void repeatedHeaderNames_HTTP_2() throws Exception {
@@ -249,11 +242,6 @@ public final class CallTest {
     head();
   }
 
-  @Test public void head_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    head();
-  }
-
   @Test public void post() throws Exception {
     server.enqueue(new MockResponse().setBody("abc"));
 
@@ -280,11 +268,6 @@ public final class CallTest {
 
   @Test public void post_HTTP_2() throws Exception {
     enableProtocol(Protocol.HTTP_2);
-    post();
-  }
-
-  @Test public void post_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     post();
   }
 
@@ -317,11 +300,6 @@ public final class CallTest {
     postZeroLength();
   }
 
-  @Test public void postZeroLength_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    postZeroLength();
-  }
-
   @Test public void postBodyRetransmittedAfterAuthorizationFail() throws Exception {
     postBodyRetransmittedAfterAuthorizationFail("abc");
   }
@@ -333,11 +311,6 @@ public final class CallTest {
 
   @Test public void postBodyRetransmittedAfterAuthorizationFail_HTTP_2() throws Exception {
     enableProtocol(Protocol.HTTP_2);
-    postBodyRetransmittedAfterAuthorizationFail("abc");
-  }
-
-  @Test public void postBodyRetransmittedAfterAuthorizationFail_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     postBodyRetransmittedAfterAuthorizationFail("abc");
   }
 
@@ -353,11 +326,6 @@ public final class CallTest {
 
   @Test public void postEmptyBodyRetransmittedAfterAuthorizationFail_HTTP_2() throws Exception {
     enableProtocol(Protocol.HTTP_2);
-    postBodyRetransmittedAfterAuthorizationFail("");
-  }
-
-  @Test public void postEmptyBodyRetransmittedAfterAuthorizationFail_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     postBodyRetransmittedAfterAuthorizationFail("");
   }
 
@@ -377,6 +345,7 @@ public final class CallTest {
 
     Response response = client.newCall(request).execute();
     assertEquals(200, response.code());
+    response.body().close();
 
     RecordedRequest recordedRequest1 = server.takeRequest();
     assertEquals("POST", recordedRequest1.getMethod());
@@ -452,11 +421,6 @@ public final class CallTest {
     delete();
   }
 
-  @Test public void delete_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    delete();
-  }
-
   @Test public void deleteWithRequestBody() throws Exception {
     server.enqueue(new MockResponse().setBody("abc"));
 
@@ -503,11 +467,6 @@ public final class CallTest {
     put();
   }
 
-  @Test public void put_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    put();
-  }
-
   @Test public void patch() throws Exception {
     server.enqueue(new MockResponse().setBody("abc"));
 
@@ -534,11 +493,6 @@ public final class CallTest {
 
   @Test public void patch_HTTPS() throws Exception {
     enableTls();
-    patch();
-  }
-
-  @Test public void patch_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     patch();
   }
 
@@ -617,6 +571,42 @@ public final class CallTest {
     }
 
     assertEquals("SyncApiTest", server.takeRequest().getHeader("User-Agent"));
+  }
+
+  @Test public void legalToExecuteTwiceCloning() throws Exception {
+    server.enqueue(new MockResponse().setBody("abc"));
+    server.enqueue(new MockResponse().setBody("def"));
+
+    Request request = new Request.Builder()
+        .url(server.url("/"))
+        .build();
+
+    Call call = client.newCall(request);
+    Response response1 = call.execute();
+
+    Call cloned = call.clone();
+    Response response2 = cloned.execute();
+
+    assertEquals(response1.body().string(), "abc");
+    assertEquals(response2.body().string(), "def");
+  }
+
+  @Test public void legalToExecuteTwiceCloning_Async() throws Exception {
+    server.enqueue(new MockResponse().setBody("abc"));
+    server.enqueue(new MockResponse().setBody("def"));
+
+    Request request = new Request.Builder()
+        .url(server.url("/"))
+        .build();
+
+    Call call = client.newCall(request);
+    call.enqueue(callback);
+
+    Call cloned = call.clone();
+    cloned.enqueue(callback);
+
+    callback.await(request.url()).assertBody("abc");
+    callback.await(request.url()).assertBody("def");
   }
 
   @Test public void get_Async() throws Exception {
@@ -1063,7 +1053,7 @@ public final class CallTest {
       client.newCall(request).execute();
       fail();
     } catch (UnknownServiceException expected) {
-      assertTrue(expected.getMessage().contains("CLEARTEXT communication not supported"));
+      assertEquals("CLEARTEXT communication not enabled for client", expected.getMessage());
     }
   }
 
@@ -1517,17 +1507,21 @@ public final class CallTest {
     assertEquals("Hello", request2.getBody().readUtf8());
   }
 
-  @Test public void propfindRedirectsToPropfind() throws Exception {
+  @Test public void propfindRedirectsToPropfindAndMaintainsRequestBody() throws Exception {
+    // given
     server.enqueue(new MockResponse()
         .setResponseCode(HttpURLConnection.HTTP_MOVED_TEMP)
         .addHeader("Location: /page2")
         .setBody("This page has moved!"));
     server.enqueue(new MockResponse().setBody("Page 2"));
 
+    // when
     Response response = client.newCall(new Request.Builder()
         .url(server.url("/page1"))
         .method("PROPFIND", RequestBody.create(MediaType.parse("text/plain"), "Request Body"))
         .build()).execute();
+
+    // then
     assertEquals("Page 2", response.body().string());
 
     RecordedRequest page1 = server.takeRequest();
@@ -1536,6 +1530,7 @@ public final class CallTest {
 
     RecordedRequest page2 = server.takeRequest();
     assertEquals("PROPFIND /page2 HTTP/1.1", page2.getRequestLine());
+    assertEquals("Request Body", page2.getBody().readUtf8());
   }
 
   @Test public void responseCookies() throws Exception {
@@ -1792,7 +1787,7 @@ public final class CallTest {
         .build());
     call.enqueue(callback);
     call.cancel();
-    callback.await(server.url("/a")).assertFailure("Canceled");
+    callback.await(server.url("/a")).assertFailure("Canceled", "Socket closed");
   }
 
   @Test public void cancelAll() throws Exception {
@@ -1801,7 +1796,7 @@ public final class CallTest {
         .build());
     call.enqueue(callback);
     client.dispatcher().cancelAll();
-    callback.await(server.url("/")).assertFailure("Canceled");
+    callback.await(server.url("/")).assertFailure("Canceled", "Socket closed");
   }
 
   @Test public void cancelBeforeBodyIsRead() throws Exception {
@@ -1854,17 +1849,17 @@ public final class CallTest {
     cancelInFlightBeforeResponseReadThrowsIOE();
   }
 
-  @Test public void cancelInFlightBeforeResponseReadThrowsIOE_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
-    cancelInFlightBeforeResponseReadThrowsIOE();
-  }
-
   /**
    * This test puts a request in front of one that is to be canceled, so that it is canceled before
    * I/O takes place.
    */
   @Test public void canceledBeforeIOSignalsOnFailure() throws Exception {
-    client.dispatcher().setMaxRequests(1); // Force requests to be executed serially.
+    // Force requests to be executed serially.
+    okhttp3.Dispatcher dispatcher = new okhttp3.Dispatcher(client.dispatcher().executorService());
+    dispatcher.setMaxRequests(1);
+    client = client.newBuilder()
+        .dispatcher(dispatcher)
+        .build();
 
     Request requestA = new Request.Builder().url(server.url("/a")).build();
     Request requestB = new Request.Builder().url(server.url("/b")).build();
@@ -1886,7 +1881,7 @@ public final class CallTest {
 
     callback.await(requestA.url()).assertBody("A");
     // At this point we know the callback is ready, and that it will receive a cancel failure.
-    callback.await(requestB.url()).assertFailure("Canceled");
+    callback.await(requestB.url()).assertFailure("Canceled", "Socket closed");
   }
 
   @Test public void canceledBeforeIOSignalsOnFailure_HTTPS() throws Exception {
@@ -1896,11 +1891,6 @@ public final class CallTest {
 
   @Test public void canceledBeforeIOSignalsOnFailure_HTTP_2() throws Exception {
     enableProtocol(Protocol.HTTP_2);
-    canceledBeforeIOSignalsOnFailure();
-  }
-
-  @Test public void canceledBeforeIOSignalsOnFailure_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     canceledBeforeIOSignalsOnFailure();
   }
 
@@ -1928,11 +1918,6 @@ public final class CallTest {
 
   @Test public void canceledBeforeResponseReadSignalsOnFailure_HTTP_2() throws Exception {
     enableProtocol(Protocol.HTTP_2);
-    canceledBeforeResponseReadSignalsOnFailure();
-  }
-
-  @Test public void canceledBeforeResponseReadSignalsOnFailure_SPDY_3() throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     canceledBeforeResponseReadSignalsOnFailure();
   }
 
@@ -1982,12 +1967,6 @@ public final class CallTest {
   @Test public void canceledAfterResponseIsDeliveredBreaksStreamButSignalsOnce_HTTP_2()
       throws Exception {
     enableProtocol(Protocol.HTTP_2);
-    canceledAfterResponseIsDeliveredBreaksStreamButSignalsOnce();
-  }
-
-  @Test public void canceledAfterResponseIsDeliveredBreaksStreamButSignalsOnce_SPDY_3()
-      throws Exception {
-    enableProtocol(Protocol.SPDY_3);
     canceledAfterResponseIsDeliveredBreaksStreamButSignalsOnce();
   }
 
@@ -2592,6 +2571,78 @@ public final class CallTest {
         .assertCode(200)
         .assertHeader("abc", "def")
         .assertBody("");
+  }
+
+  @Test public void leakedResponseBodyLogsStackTrace() throws Exception {
+    server.enqueue(new MockResponse()
+        .setBody("This gets leaked."));
+
+    client = new OkHttpClient.Builder()
+        .connectionPool(new ConnectionPool(0, 10, TimeUnit.MILLISECONDS))
+        .build();
+
+    Request request = new Request.Builder()
+        .url(server.url("/"))
+        .build();
+
+    Level original = logger.getLevel();
+    logger.setLevel(Level.FINE);
+    logHandler.setFormatter(new SimpleFormatter());
+    try {
+      client.newCall(request).execute(); // Ignore the response so it gets leaked then GC'd.
+      awaitGarbageCollection();
+
+      String message = logHandler.take();
+      assertTrue(message.contains("WARNING: A connection to " + server.url("/") + " was leaked."
+          + " Did you forget to close a response body?"));
+      assertTrue(message.contains("okhttp3.RealCall.execute("));
+      assertTrue(message.contains("okhttp3.CallTest.leakedResponseBodyLogsStackTrace("));
+    } finally {
+      logger.setLevel(original);
+    }
+  }
+
+  @Test public void asyncLeakedResponseBodyLogsStackTrace() throws Exception {
+    server.enqueue(new MockResponse()
+        .setBody("This gets leaked."));
+
+    client = new OkHttpClient.Builder()
+        .connectionPool(new ConnectionPool(0, 10, TimeUnit.MILLISECONDS))
+        .build();
+
+    Request request = new Request.Builder()
+        .url(server.url("/"))
+        .build();
+
+    Level original = logger.getLevel();
+    logger.setLevel(Level.FINE);
+    logHandler.setFormatter(new SimpleFormatter());
+    try {
+      final CountDownLatch latch = new CountDownLatch(1);
+      client.newCall(request).enqueue(new Callback() {
+        @Override public void onFailure(Call call, IOException e) {
+          fail();
+        }
+
+        @Override public void onResponse(Call call, Response response) throws IOException {
+          // Ignore the response so it gets leaked then GC'd.
+          latch.countDown();
+        }
+      });
+      latch.await();
+      // There's some flakiness when triggering a GC for objects in a separate thread. Adding a
+      // small delay appears to ensure the objects will get GC'd.
+      Thread.sleep(200);
+      awaitGarbageCollection();
+
+      String message = logHandler.take();
+      assertTrue(message.contains("WARNING: A connection to " + server.url("/") + " was leaked."
+          + " Did you forget to close a response body?"));
+      assertTrue(message.contains("okhttp3.RealCall.enqueue("));
+      assertTrue(message.contains("okhttp3.CallTest.asyncLeakedResponseBodyLogsStackTrace("));
+    } finally {
+      logger.setLevel(original);
+    }
   }
 
   private void makeFailingCall() {
