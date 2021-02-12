@@ -43,7 +43,7 @@
     <!-- ALPN library targeted to Java 8 update 71 - 74 -->
     <alpn.jdk8.version>8.1.7.v20160121</alpn.jdk8.version>
     <android.version>4.1.1.4</android.version>
-    <apache.http.version>4.2.2</apache.http.version>
+    <apache.http.version>4.3.6</apache.http.version>
     <bouncycastle.version>1.50</bouncycastle.version>
     <guava.version>16.0</guava.version>
     <java.version>1.6</java.version>
